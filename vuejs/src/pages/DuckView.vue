@@ -1,80 +1,81 @@
 <template>
-  <div>
-    <!-- Text Input and Button -->
-    <div class="row">
-      <div class="col-md-4">
-        <input type="text" v-model="textInput" class="form-control" placeholder="Enter text">
+  <v-app>
+    <div>
+      <!-- Text Input and Button -->
+      <div class="row">
+        <div class="col-md-4">
+          <input type="text" v-model="textInput" class="form-control" placeholder="Enter text">
+        </div>
+        <div class="col-md-4">
+          <v-select
+            v-model="selectedRenderOptions"
+            :items="['Message', 'Plot', 'Table']"
+            label="Render"
+            multiple
+            hint="Select how to render data"
+            persistent-hint
+          ></v-select>
+        </div>
+        <div class="col-md-4">
+          <button @click="handleButtonClick" class="btn btn-primary">Submit</button>
+        </div>
+        
       </div>
-      <div class="col-md-4">
-        <!-- Multiple Select using Element -->
-        <el-select v-model="selectedOptions" multiple placeholder="Output Selection">
-          <el-option
-            v-for="item in options"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value">
-          </el-option>
-        </el-select>
-      </div>
-      <div class="col-md-4">
-        <button @click="handleButtonClick" class="btn btn-primary">Submit</button>
-      </div>
-      
-    </div>
 
-    <!-- BigChart for Timeseries -->
-    <div class="row mt-4">
-      <div class="col-12">
-        <card type="chart">
-          <template slot="header">
-            <div class="row">
-              <div class="col-sm-6" :class="isRTL ? 'text-right' : 'text-left'">
-                <h5 class="card-category">Timeseries Data</h5>
-                <h2 class="card-title">Timeseries Plot</h2>
+      <!-- BigChart for Timeseries -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <card type="chart">
+            <template slot="header">
+              <div class="row">
+                <div class="col-sm-6" :class="isRTL ? 'text-right' : 'text-left'">
+                  <h5 class="card-category">Timeseries Data</h5>
+                  <h2 class="card-title">Timeseries Plot</h2>
+                </div>
               </div>
+            </template>
+            <div class="chart-area">
+              <line-chart style="height: 100%"
+                          ref="bigChart"
+                          chart-id="big-line-chart"
+                          :chart-data="bigLineChart.chartData"
+                          :gradient-colors="bigLineChart.gradientColors"
+                          :gradient-stops="bigLineChart.gradientStops"
+                          :extra-options="bigLineChart.extraOptions">
+              </line-chart>
             </div>
-          </template>
-          <div class="chart-area">
-            <line-chart style="height: 100%"
-                        ref="bigChart"
-                        chart-id="big-line-chart"
-                        :chart-data="bigLineChart.chartData"
-                        :gradient-colors="bigLineChart.gradientColors"
-                        :gradient-stops="bigLineChart.gradientStops"
-                        :extra-options="bigLineChart.extraOptions">
-            </line-chart>
-          </div>
-        </card>
+          </card>
+        </div>
       </div>
-    </div>
 
-    <!-- Table -->
-    <div class="row mt-4">
-      <div class="col-12">
-        <card class="card">
-          <h4 slot="header" class="card-title">Table Title</h4>
-          <div class="table-responsive">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>Column 1</th>
-                  <th>Column 2</th>
-                  <th>Column 3</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(row, index) in tableData" :key="index">
-                  <td>{{ row.column1 }}</td>
-                  <td>{{ row.column2 }}</td>
-                  <td>{{ row.column3 }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </card>
+      <!-- Table -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <card class="card">
+            <h4 slot="header" class="card-title">Table Title</h4>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Column 1</th>
+                    <th>Column 2</th>
+                    <th>Column 3</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, index) in tableData" :key="index">
+                    <td>{{ row.column1 }}</td>
+                    <td>{{ row.column2 }}</td>
+                    <td>{{ row.column3 }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </card>
+        </div>
       </div>
     </div>
-  </div>
+  </v-app>
 </template>
 
 <script>
@@ -88,12 +89,7 @@ export default {
   },
   data() {
     return {
-      selectedOptions: [],  // will hold the selected values
-      options: [  // these are the options for the select input
-        { value: 'output_message', label: 'Message' },
-        { value: 'output_plot', label: 'Plot' },
-        { value: 'output_table', label: 'Table' }
-      ],
+      selectedRenderOptions: [],  // will hold the selected values
       textInput: '',
       bigLineChart: {
           extraOptions: chartConfigs.purpleChartOptions,
@@ -167,5 +163,7 @@ export default {
 </script>
 
 <style>
-/* Optionally, add custom styles here */
+  .v-application {
+      background-color: transparent !important;
+  }
 </style>

@@ -22,15 +22,18 @@ import router from "./router/index";
 import BlackDashboard from "./plugins/blackDashboard";
 import i18n from "./i18n"
 import './registerServiceWorker'
-import './plugins/element.js'
+
+import vuetify from './vuetify';
 
 Vue.use(BlackDashboard);
 Vue.use(VueRouter);
 Vue.use(RouterPrefetch);
 
 /* eslint-disable no-new */
+
 new Vue({
   router,
   i18n,
+  vuetify,
   render: h => h(App)
 }).$mount("#app");
