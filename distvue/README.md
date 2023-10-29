@@ -243,3 +243,11 @@ export default createVuetify({
   },
 })
 ```
+
+#### Tables
+
+We will use vue3-easy-data-table for our table needs:
+
+```
+npm add vue3-easy-data-table
+```

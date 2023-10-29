@@ -11,6 +11,7 @@
 	--background: #2e2f2f;
   --surface:#4a4a4a;
   --accent_1:#6d6d6d;
+  --accent_2:#393939;
   --primary: #420544;
   --primary-darken-1: #3700B3;
   --secondary: #e2e4e3;
