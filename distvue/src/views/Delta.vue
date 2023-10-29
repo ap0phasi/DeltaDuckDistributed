@@ -32,7 +32,7 @@
     <v-row>
       <v-col>
         <v-card v-if="selectedOptions.includes('Plot')">
-          <Bubble />
+          <Line />
         </v-card>
       </v-col>
     </v-row>
@@ -48,12 +48,12 @@
 
 <script setup>
   import Sidebar from "@/components/Sidebar.vue";
-  import Bubble from "@/components/Bubble.vue";
+  import Line from "@/components/Line.vue";
 </script>
 
 <script>
   export default {
-    components: { Bubble },
+    components: { Line },
     data() {
       return {
         inputText: '',
