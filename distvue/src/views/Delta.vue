@@ -17,7 +17,7 @@
           <v-col cols="3" md="3" class="pl-5 pt-5 align-center justify-center">
             <v-text-field label="Table Name" v-model="tableName"></v-text-field>
           </v-col>
-          <v-col cols="3" md="3" class="pt-5 align-center justify-center">
+          <v-col cols="3" md="3" class="pt-7 align-center justify-center">
             <v-btn color="primary" @click="processData">Load</v-btn>
           </v-col>
         </v-row>
@@ -47,7 +47,7 @@
 export default {
   data() {
         return {
-          selectedOptions: [],
+          selectedOptions: ['Append'],
           options: ['Append','Overwrite'],
         }
       }
