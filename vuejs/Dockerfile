@@ -9,6 +9,10 @@ COPY package*.json ./
 # Install project dependencies
 RUN npm install
 
+# To resolve vuetify issues
+RUN npm add vuetify
+RUN npm install --save vuetify/styles
+
 # Copy the rest of the application code to the container
 COPY . .
 

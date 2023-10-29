@@ -1,25 +1,63 @@
 # DeltaDuckDistributed
 
-## Setup
+## Development
 
-Start docker container based on node, run like this:
+### Initial VueJS Build
+From command line
+'''
+npm create vuetify
+'''
+Project Name: distvue
+Preset: Base
+Use TypeScript: No
+Dependencies: npm
 
-docker run -p 8080:8080 -it -v testvolume:/app vueblack /bin/sh
-npm install -g @vue/cli
+'''
+cd distvue
+npm install @mdi/font -D
+npm i vue-chartjs chart.js
+code .
+npm run dev
+'''
 
-vue create my-app
+We now have the general components we will need for app development.
+We will start with setting up a simple two page application with a collapsible
+sidebar for navigation. 
 
-Use npm
+#### App Style Setup
 
-cd my-app
-vue add element
+First we will add some style helpers to our App.Vue:
 
-## Vue.js Development
+```
+<style lang="scss">
+:root {
+	--primary: #4ade80;
+	--sidebar: #22c55e;
+}
+</style>
+```
 
-Vue JS template: https://github.com/creativetimofficial/vue-black-dashboard
+#### Sidebar Construction
 
-Download as zip, modify locally, create Dockerfile
+First we will add a Sidebar.vue script to src/components. To start, we will just make a simple sidebar frame like this:
 
-### Experimentation
+'''
+<template>
+    <v-navigation-drawer v-model="drawer" :rail="rail" color=var(--sidebar) class="rounded-e-xl">
+    </v-navigation-drawer>
+</template>
 
-How to take out pages? See routes.js and DashboardLayout.vue
+<script setup>
+import { ref } from "vue";
+
+const drawer = ref(null);
+</script>
+'''
+
+Note how the color reference is coming from our style names in App.vue. This will save us a lot of time as we refine our
+colors. To render this on the HelloWorld.vue, we simply need to add
+
+```
+<Sidebar />
+```
+To the beginning of our template and 
