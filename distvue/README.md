@@ -282,6 +282,9 @@ FROM nginx:stable-alpine as production-stage
 # Copy built assets from 'build-stage'
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 
+# Copy the Nginx configuration file
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 # Expose port 80
 EXPOSE 80
 
@@ -289,3 +292,5 @@ EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 
 '''
+
+Note the nginx.conf fixes the issue of the app throwing 404 when refreshed.
