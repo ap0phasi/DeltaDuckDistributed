@@ -62,7 +62,7 @@ export default {
     .v-list-item--active::before {
         content: '';
         position: absolute;
-        left: 247px;
+        left: 255px;
         top: 2px;
         bottom: 2px;
         width: 5px;

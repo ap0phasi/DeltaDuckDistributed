@@ -53,3 +53,16 @@ export default {
       }
 }
 </script>
+
+<style scoped>
+.v-card::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0px;
+  height: 2px; /* Adjust the height of the bar as needed */
+  background-color: var(--highlight); /* Change the color as needed */
+  box-shadow: 0 0 5px var(--highlight); /* Optional glow effect */
+}
+</style>

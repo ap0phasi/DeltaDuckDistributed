@@ -8,11 +8,11 @@
 
 <style lang="scss">
 :root {
-	--background: #2e2f2f;
-  --surface:#4a4a4a;
+	--background: #261e2f;
+  --surface:#42414397;
   --accent_1:#6d6d6d;
-  --accent_2:#393939;
-  --primary: #420544;
+  --accent_2:#33333497;
+  --primary: #270328;
   --primary-darken-1: #3700B3;
   --secondary: #e2e4e3;
   --secondary-darken-1: #3700B3;
