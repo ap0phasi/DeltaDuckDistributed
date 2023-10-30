@@ -21,7 +21,7 @@ def dataframe_to_json_chart(df):
     # Convert DataFrame to the required JSON format
     chart_json = {
         "respond_to": "duck",
-        "response_contents": ["chart"],
+        "response_contents": ["Chart"],
         "chartData": {
             "labels": list(df.index),
             "datasets": []

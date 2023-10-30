@@ -57,6 +57,8 @@
     import Sidebar from "@/components/Sidebar.vue";
     import Line from "@/components/Line.vue";
     import Table from "@/components/Table.vue";
+    // Handle Websocket Connection
+    import WS from '@/services/ws';
   </script>
   
   <script>
@@ -77,15 +79,14 @@
         };
       },
       methods: {
-        initWebSocket() {
-        this.websocket = new WebSocket('ws://localhost:8081/ws'); // Replace with your server's WebSocket URL
+        connectWebSocket() {
             // Define an event listener to handle incoming messages
-        this.websocket.addEventListener('message', (event) => {
+          WS.addEventListener('message', (event) => {
           this.output1 = event.data; // Update the button text with the received message
         });
         },
         processData() {
-          this.websocket.send(JSON.stringify({ request_from: 'duck', request_contents: ['chart'], request_query: 'hi' }));
+          WS.send(JSON.stringify({ request_from: 'duck', request_contents: this.selectedOptions, request_query: 'hi' }));
           // Sample processing logic
           // this.output1 = `Entered text: ${this.inputText}`;
           this.output2 = `Selected options: ${this.selectedOptions.join(', ')}`;
@@ -93,7 +94,7 @@
         },
       },
       created() {
-          this.initWebSocket(); // Initialize the WebSocket connection when the component is created
+          this.connectWebSocket(); // Initialize the WebSocket connection when the component is created
       },
     };
   </script>

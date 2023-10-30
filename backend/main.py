@@ -23,9 +23,9 @@ async def websocket_endpoint(websocket: WebSocket):
         if message_requestfrom == 'duck':
             # Create a sample dataframe with random values
             num_rows = 7  # For example, 7 days in a week
-            num_columns = 3  # For example, 3 datasets
+            num_columns = 4  # For example, 3 datasets
             data = np.random.randint(0, 100, (num_rows, num_columns))
-            df = pd.DataFrame(data, columns=['Data One', 'Data Two', 'Data Three'])
+            df = pd.DataFrame(data, columns=['Data One', 'Data Two', 'Data Three', 'Data Four'])
             df.index = ['January', 'February', 'March', 'April', 'May', 'June', 'July']
 
             # Convert the dataframe to JSON chart format

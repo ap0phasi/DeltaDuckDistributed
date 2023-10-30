@@ -149,8 +149,7 @@ export default {
 
 Next we need to route everything in our app. We will make three views for our DeltaLake, and Settings pages. Update the router to
 
-'''
-
+```
 // Composables
 import { createRouter, createWebHistory } from 'vue-router'
 
@@ -194,7 +193,7 @@ const router = createRouter({
 })
 
 export default router
-'''
+```
 
 #### Themes
 
@@ -257,7 +256,7 @@ npm add vue3-easy-data-table
 
 ### Containerization
 
-'''
+```
 # Use an official Node runtime as a parent image
 FROM node:alpine as build-stage
 
@@ -290,7 +289,14 @@ EXPOSE 80
 
 # When the container starts, start the nginx server
 CMD ["nginx", "-g", "daemon off;"]
-
-'''
+```
 
 Note the nginx.conf fixes the issue of the app throwing 404 when refreshed.
+
+### Websocket Connections
+
+We will set up a Python websocket service to return messages when requested. This will be in 
+the exact format of the data needed for rendering the different components. 
+
+It is important that we set up /services/ws.js for our websocket connection instead of generating
+a new websocket connection for each component to allow for triggering across components. 
