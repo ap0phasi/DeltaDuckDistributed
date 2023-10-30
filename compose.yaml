@@ -6,5 +6,10 @@ services:
       - "80:80"
     environment:
       - NODE_ENV=production
+  backend:
+    build:
+      context: backend
+    ports:
+      - 8081:8001
 
 

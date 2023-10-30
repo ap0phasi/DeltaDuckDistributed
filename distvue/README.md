@@ -258,26 +258,34 @@ npm add vue3-easy-data-table
 ### Containerization
 
 '''
-# build stage
-FROM node:14
-# Set the working directory inside the container
+# Use an official Node runtime as a parent image
+FROM node:alpine as build-stage
+
+# Set the working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json to the container
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
 # Install project dependencies
 RUN npm install
 
-# Copy the rest of the application code to the container
+# Copy project files and folders to the current working directory (i.e. 'app' folder)
 COPY . .
 
-# Build the Vue.js project for production
+# Build app for production with minification
 RUN npm run build
 
-# Expose the port your application runs on (default is 8080)
-EXPOSE 8080
+# Stage 2: Serve app with nginx server
+FROM nginx:stable-alpine as production-stage
 
-# Define the command to run your application
-CMD ["npm", "run", "serve"]
+# Copy built assets from 'build-stage'
+COPY --from=build-stage /app/dist /usr/share/nginx/html
+
+# Expose port 80
+EXPOSE 80
+
+# When the container starts, start the nginx server
+CMD ["nginx", "-g", "daemon off;"]
+
 '''
