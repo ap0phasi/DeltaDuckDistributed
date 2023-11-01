@@ -81,7 +81,7 @@ import WS from '@/services/ws';
     }
       }
     },
-    mounted() {
+    created() {
     this.connectWebSocket();
     },
     methods: {
@@ -91,7 +91,7 @@ import WS from '@/services/ws';
                 const data = JSON.parse(event.data);
                 if (data.respond_to === 'duck') {
                     if (data.response_contents.includes('Chart')){
-                        this.chartData = data.chartData;
+                        this.chartData = data.data.chart;
                         }
                     }
             }

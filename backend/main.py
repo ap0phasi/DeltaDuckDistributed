@@ -6,7 +6,7 @@ import json
 import numpy as np
 import pandas as pd
 
-from make_response import dataframe_to_json_chart  # Update with the correct module name
+from make_response import create_json_responses  # Update with the correct module name
 
 
 app = FastAPI()
@@ -28,8 +28,7 @@ async def websocket_endpoint(websocket: WebSocket):
             df = pd.DataFrame(data, columns=['Data One', 'Data Two', 'Data Three', 'Data Four'])
             df.index = ['January', 'February', 'March', 'April', 'May', 'June', 'July']
 
-            # Convert the dataframe to JSON chart format
-            json_chart = dataframe_to_json_chart(df)
+            json_response = create_json_responses(df,message_requestcontents)
 
             # Send the JSON chart data
-            await websocket.send_text(json_chart)
+            await websocket.send_text(json_response)

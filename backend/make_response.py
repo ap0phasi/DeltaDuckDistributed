@@ -14,14 +14,10 @@ def generate_color_hex(num_colors):
     return colors
 
 def dataframe_to_json_chart(df):
-    # Determine number of required colors
     num_datasets = len(df.columns)
     colors = generate_color_hex(num_datasets)
     
-    # Convert DataFrame to the required JSON format
     chart_json = {
-        "respond_to": "duck",
-        "response_contents": ["Chart"],
         "chartData": {
             "labels": list(df.index),
             "datasets": []
@@ -38,7 +34,43 @@ def dataframe_to_json_chart(df):
         }
         chart_json["chartData"]["datasets"].append(dataset)
 
-    return json.dumps(chart_json, indent=4)
+    return chart_json
+
+def dataframe_to_table_json(df):
+    df = df.reset_index()
+    headers = [{"text": col, "value": col.lower().replace(" ", "_")} for col in df.columns]
+    items = df.to_dict(orient='records')
+    formatted_items = []
+
+    for item in items:
+        formatted_item = {k.lower().replace(" ", "_"): v for k, v in item.items()}
+        formatted_items.append(formatted_item)
+
+    table_json = {
+        "tableData": {
+            "headers": headers,
+            "items": formatted_items
+        }
+    }
+
+    return table_json
+
+def create_json_responses(df, response_types):
+    combined_json = {
+        "respond_to": "duck",
+        "response_contents": response_types,
+        "data": {}
+    }
+
+    if "Chart" in response_types:
+        chart_json = dataframe_to_json_chart(df)
+        combined_json["data"]["chart"] = chart_json["chartData"]
+
+    if "Table" in response_types:
+        table_json = dataframe_to_table_json(df)
+        combined_json["data"]["table"] = table_json["tableData"]
+
+    return json.dumps(combined_json, indent=4)
 
 if __name__=="__main__":
    # Example usage
@@ -49,5 +81,5 @@ if __name__=="__main__":
     index = ['January', 'February', 'March', 'April', 'May', 'June', 'July']
     df = pd.DataFrame(data, index=index)
 
-    json_output = dataframe_to_json_chart(df)
+    json_output = create_json_responses(df, ["Chart","Table"])
     print(json_output)
