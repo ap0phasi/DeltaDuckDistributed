@@ -38,7 +38,7 @@
         <v-col>
           <v-card v-if="selectedOptions.includes('Chart')">
             <h3 class="pl-4">Timeseries Chart</h3>
-            <Line />
+            <Line v-bind:chartData="chartData"/>
           </v-card>
         </v-col>
       </v-row>
@@ -46,7 +46,7 @@
         <v-col>
           <v-card v-if="selectedOptions.includes('Table')">
             <h3 class="pl-4">Table Output</h3>
-            <Table />
+            <Table v-bind:tableData="tableData"/>
           </v-card>
         </v-col>
       </v-row>
@@ -57,8 +57,7 @@
     import Sidebar from "@/components/Sidebar.vue";
     import Line from "@/components/Line.vue";
     import Table from "@/components/Table.vue";
-    // Handle Websocket Connection
-    import WS from '@/services/ws';
+
   </script>
   
   <script>
@@ -76,17 +75,34 @@
           output1: '',
           output2: '',
           output3: '',
+          WS: null,
+          chartData: {
+                labels: [],
+                datasets: []
+            },
+          tableData: {
+            headers:[],
+            items: []
+          }
         };
       },
       methods: {
         connectWebSocket() {
-            // Define an event listener to handle incoming messages
-          WS.addEventListener('message', (event) => {
-          this.output1 = event.data; // Update the button text with the received message
-        });
+          this.WS = new WebSocket("ws://localhost:8081/ws");
+          this.WS.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            this.output1 = data;
+            if (data.response_contents.includes('Chart')){
+              this.chartData = data.data.chart;
+            }
+            if (data.response_contents.includes('Table')){
+              this.tableData = data.data.table;
+            }
+
+          }
         },
         processData() {
-          WS.send(JSON.stringify({ request_from: 'duck', request_contents: this.selectedOptions, request_query: 'hi' }));
+          this.WS.send(JSON.stringify({ request_from: 'duck', request_contents: this.selectedOptions, request_query: 'hi' }));
           // Sample processing logic
           // this.output1 = `Entered text: ${this.inputText}`;
           this.output2 = `Selected options: ${this.selectedOptions.join(', ')}`;

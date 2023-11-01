@@ -28,21 +28,14 @@ ChartJS.register(
   Legend
 )
 
-// Handle Websocket Connection
-import WS from '@/services/ws';
-
   export default {
     name: 'MyChartComponent',
     components: {
         Line,
     },
+    props: ['chartData'],
     data() {
       return {
-        chartData: {
-            labels: [],
-            datasets: [
-            ]
-        },
         chartOptions: {
         responsive: true,
         plugins: {
@@ -80,22 +73,6 @@ import WS from '@/services/ws';
         }
     }
       }
-    },
-    created() {
-    this.connectWebSocket();
-    },
-    methods: {
-      connectWebSocket() {
-            // Define an event listener to handle incoming messages
-            WS.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                if (data.respond_to === 'duck') {
-                    if (data.response_contents.includes('Chart')){
-                        this.chartData = data.data.chart;
-                        }
-                    }
-            }
-        },
     },
   }
   </script>

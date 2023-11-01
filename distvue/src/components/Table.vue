@@ -1,8 +1,8 @@
 <template>
     <Vue3EasyDataTable
               table-class-name="customize-table"
-              :headers="headers"
-              :items="items"
+              :headers="tableData.headers"
+              :items="tableData.items"
               :sort-by="sortBy"
               :sort-type="sortType"
             />
@@ -14,39 +14,14 @@
 </script>
   
 <script>
-// Handle Websocket Connection
-import WS from '@/services/ws';
 
 export default {
     components: { 
     Vue3EasyDataTable 
 
     },
+    props: ['tableData'],
     data() {
-    return {
-        headers: [
-        ],
-        items: [
-        ],
-    };
-    },
-    created() {
-    this.connectWebSocket();
-    },
-    methods: {
-      connectWebSocket() {
-            // Define an event listener to handle incoming messages
-            WS.onmessage = (event) => {
-              console.log('Message to Table:')
-                const data = JSON.parse(event.data);
-                if (data.respond_to === 'duck') {
-                    if (data.response_contents.includes('Table')){
-                        this.headers = data.data.table.headers;
-                        this.items = data.data.table.items;
-                        }
-                    }
-            }
-        },
     },
 }
 </script>
