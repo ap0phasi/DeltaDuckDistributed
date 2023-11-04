@@ -4,6 +4,7 @@ import duckdb
 import re
 from deltalake import DeltaTable
 from make_response import create_json_responses
+from delta_check import log_tables, log_query
 import json
 import numpy as np
 
@@ -11,6 +12,19 @@ app = FastAPI()
 
 # Default to in-memory duckdb connection
 conn = duckdb.connect(':memory:')
+
+# Check what delta lakes exist
+@app.get("/checktable")
+async def checktables(request: Request):
+    log_tables('data/deltalake', conn)
+    json_response = {
+        "respond_to": "delta",
+        "response_contents": ["message"],
+        "data": {
+            "message": "_directory_list updated"
+        }
+    }
+    return json.dumps(json_response, indent=4)
 
 # Allow user to request duckdb connection
 @app.get("/duckconnect")
@@ -26,6 +40,7 @@ async def querydata(request: Request):
                 "message": "Connected!"
             }
         }
+        
         return json.dumps(json_response, indent=4)
     
     except Exception as e:
@@ -44,7 +59,10 @@ async def querydata(request: Request):
             query_result = create_json_responses(df, data['request_contents'])
         else:
             query_result = await process_duck_query(conn,data['request_query'], data['request_contents'], data['request_render'])
-            
+        
+        # Once query is successful add the record to our table log
+        log_query(data['request_query'], conn)
+        
         return json.dumps(query_result, indent=4)
     
     except Exception as e:

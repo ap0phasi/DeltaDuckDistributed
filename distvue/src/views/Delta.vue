@@ -30,11 +30,21 @@
           </v-card>
         </v-col>
       </v-row>
+      <!-- Table outputs -->
+      <v-row>
+        <v-col>
+          <v-card>
+            <h3 class="pl-4">DeltaLake Overview (__deltalake_dir)</h3>
+            <Table v-bind:tableData="tableData"/>
+          </v-card>
+        </v-col>
+      </v-row>
     </v-container>
 </template>
 
 <script setup>
   import Sidebar from "@/components/Sidebar.vue";
+  import Table from "@/components/Table.vue";
 </script>
 
 <script>
@@ -47,24 +57,47 @@ export default {
           selectedOptions: 'overwrite',
           options: ['overwrite', 'append'],
           WS: null,
+          tableData: {
+            headers:[],
+            items: []
+          }
         }
       },
     methods: {
       connectWebSocket() {
+        // Connect to WebSocket and save to data
         this.WS = new WebSocket("ws://localhost:8081/ws");
         this.WS.onmessage = (event) => {
             const data = JSON.parse(event.data);
             this.messageoutput = data;
+            if (data.response_contents.includes('Table')){
+              this.tableData = data.data.table;
+            }
         }
+        // Once Websocket is open, check the tables in the DeltaLake
+        this.WS.addEventListener('open', () => {
+          this.checkTables()
+        })
       },
       processData() {
         this.messageoutput = "Processing Request..."
-        this.WS.send(JSON.stringify({ request_from: 'delta', request_endpoint: 'ingestdata', request_args: { 
+        this.WS.send(JSON.stringify({ request_to: 'delta', request_endpoint: 'ingestdata', request_args: { 
           request_tablename : this.tableName,
           request_folderpath : this.folderPath,
           request_method : this.selectedOptions
         } }));
+        this.checkTables()
       },
+      checkTables(){
+        // Check the status of DeltaTables through a request
+        this.WS.send(JSON.stringify({ request_to: 'duck', request_endpoint: 'checktable', request_args: {}}))
+        // Query the __deltalake_dir table
+        this.WS.send(JSON.stringify({ request_to: 'duck', request_endpoint: 'querydata', request_args: { 
+            request_contents: ["Table"],
+            request_query :  "SELECT * FROM __deltalake_dir",
+            request_render : 1_000_000
+          } }));
+      }
     },
     created() {
         this.connectWebSocket(); // Initialize the WebSocket connection when the component is created

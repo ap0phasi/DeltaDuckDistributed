@@ -28,12 +28,12 @@ async def websocket_endpoint(websocket: WebSocket):
             # Receive message
             message = await websocket.receive_text()
             message_data = json.loads(message)
-            message_requestfrom = message_data.get('request_from')
+            message_requestto = message_data.get('request_to')
             message_requestendpoint = message_data.get('request_endpoint')
 
             # Attempt to send the request and get a response
             json_response = await send_request(
-                urls[message_requestfrom][0] + message_requestendpoint,
+                urls[message_requestto][0] + message_requestendpoint,
                 json=message_data.get('request_args')
             )
 

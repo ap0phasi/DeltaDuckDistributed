@@ -45,7 +45,7 @@ export default {
       },
       processData() {
         this.messageoutput = "Processing Request..."
-        this.WS.send(JSON.stringify({ request_from: 'duck', request_endpoint: 'duckconnect', request_args: { 
+        this.WS.send(JSON.stringify({ request_to: 'duck', request_endpoint: 'duckconnect', request_args: { 
           conn_string : this.connstring
         } }));
       },
