@@ -23,6 +23,19 @@
             <v-btn color="primary" @click="processData">Submit</v-btn>
           </v-col>
         </v-row>
+        <v-row class="fill-height">
+          <v-col class="pr-10 pl-5">
+            <v-slider
+              v-model="render_slider"
+              thumb-label
+              :min="1"
+              :max="1000"
+              :step="1"
+              color=var(--primary)
+              label="Render Data Size"
+            ></v-slider>
+          </v-col>
+        </v-row>
       </v-card>
   
       <!-- Text outputs -->
@@ -30,23 +43,25 @@
         <v-col>
           <v-card v-if="selectedOptions.includes('Message')">
             <h3 class="pl-4">Message Output</h3>
-            <p>{{ output1 }}</p>
+            <p>{{ messageoutput }}</p>
           </v-card>
         </v-col>
       </v-row>
+      <!-- Chart outputs -->
       <v-row>
         <v-col>
           <v-card v-if="selectedOptions.includes('Chart')">
             <h3 class="pl-4">Timeseries Chart</h3>
-            <Line />
+            <Line v-bind:chartData="chartData"/>
           </v-card>
         </v-col>
       </v-row>
+      <!-- Table outputs -->
       <v-row>
         <v-col>
           <v-card v-if="selectedOptions.includes('Table')">
             <h3 class="pl-4">Table Output</h3>
-            <Table />
+            <Table v-bind:tableData="tableData"/>
           </v-card>
         </v-col>
       </v-row>
@@ -57,6 +72,7 @@
     import Sidebar from "@/components/Sidebar.vue";
     import Line from "@/components/Line.vue";
     import Table from "@/components/Table.vue";
+
   </script>
   
   <script>
@@ -68,21 +84,48 @@
       },
       data() {
         return {
+          render_slider : 10,
           inputText: '',
           selectedOptions: [],
           options: ['Message', 'Chart', 'Table'],
-          output1: '',
-          output2: '',
-          output3: '',
+          messageoutput: '',
+          WS: null,
+          chartData: {
+                labels: [],
+                datasets: []
+            },
+          tableData: {
+            headers:[],
+            items: []
+          }
         };
       },
       methods: {
-        processData() {
-          // Sample processing logic
-          this.output1 = `Entered text: ${this.inputText}`;
-          this.output2 = `Selected options: ${this.selectedOptions.join(', ')}`;
-          this.output3 = `Random output: ${Math.random()}`;
+        connectWebSocket() {
+          this.WS = new WebSocket("ws://localhost:8081/ws");
+          this.WS.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            this.messageoutput = data;
+            if (data.response_contents.includes('Chart')){
+              this.chartData = data.data.chart;
+            }
+            if (data.response_contents.includes('Table')){
+              this.tableData = data.data.table;
+            }
+
+          }
         },
+        processData() {
+          this.messageoutput = "Processing Request..."
+          this.WS.send(JSON.stringify({ request_from: 'duck', request_endpoint: 'querydata', request_args: { 
+            request_contents: this.selectedOptions,
+            request_query :  this.inputText,
+            request_render : this.render_slider
+          } }));
+        },
+      },
+      created() {
+          this.connectWebSocket(); // Initialize the WebSocket connection when the component is created
       },
     };
   </script>

@@ -28,30 +28,15 @@ ChartJS.register(
   Legend
 )
 
-export default {
- name: 'App',
-
- data: () => ({
-    chartData: {
-      labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-      datasets: [
-        {
-          label: 'Data One',
-          backgroundColor: '#f87979',
-          borderColor: '#f87979',
-          tension: 0.2,
-          data: [40, 39, 10, 40, 39, 80, 40]
-        },
-        {
-          label: 'Data Two',
-          backgroundColor: '#111111',
-          borderColor: '#111111',
-          tension: 0.2,
-          data: [23, 13, 61, 35, 12, 23, 45]
-        }
-      ]
+  export default {
+    name: 'MyChartComponent',
+    components: {
+        Line,
     },
-    chartOptions: {
+    props: ['chartData'],
+    data() {
+      return {
+        chartOptions: {
         responsive: true,
         plugins: {
             legend: {
@@ -87,12 +72,8 @@ export default {
             }
         }
     }
- }),
- components: {
-  Line,
- },
-};
-</script>
-<style scoped>
-
-</style>
+      }
+    },
+  }
+  </script>
+  

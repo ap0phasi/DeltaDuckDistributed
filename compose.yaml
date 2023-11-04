@@ -7,4 +7,26 @@ services:
     environment:
       - NODE_ENV=production
 
+  backend:
+    build:
+      context: backend
+    ports:
+      - 8081:8001
+
+  deltaworker:
+    build:
+      context: deltaworker
+    ports:
+      - 8082:8002
+    volumes:
+      - ./data:/usr/src/app/data
+
+  duckworker:
+    build:
+      context: duckworker
+    ports:
+      - 8083:8003
+    volumes:
+      - ./data:/usr/src/app/data
+
 
