@@ -30,7 +30,7 @@
         <v-col>
           <v-card v-if="selectedOptions.includes('Message')">
             <h3 class="pl-4">Message Output</h3>
-            <p>{{ output1 }}</p>
+            <p>{{ messageoutput }}</p>
           </v-card>
         </v-col>
       </v-row>
@@ -72,9 +72,7 @@
           inputText: '',
           selectedOptions: [],
           options: ['Message', 'Chart', 'Table'],
-          output1: '',
-          output2: '',
-          output3: '',
+          messageoutput: '',
           WS: null,
           chartData: {
                 labels: [],
@@ -91,7 +89,7 @@
           this.WS = new WebSocket("ws://localhost:8081/ws");
           this.WS.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            this.output1 = data;
+            this.messageoutput = data;
             if (data.response_contents.includes('Chart')){
               this.chartData = data.data.chart;
             }
@@ -102,11 +100,10 @@
           }
         },
         processData() {
-          this.WS.send(JSON.stringify({ request_from: 'duck', request_contents: this.selectedOptions, request_query: 'hi' }));
-          // Sample processing logic
-          // this.output1 = `Entered text: ${this.inputText}`;
-          this.output2 = `Selected options: ${this.selectedOptions.join(', ')}`;
-          this.output3 = `Random output: ${Math.random()}`;
+          this.WS.send(JSON.stringify({ request_from: 'duck', request_endpoint: 'querydata', request_args: { 
+            request_contents: this.selectedOptions,
+            request_query :  this.inputText
+          } }));
         },
       },
       created() {

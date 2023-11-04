@@ -25,14 +25,8 @@
       <v-row>
         <v-col>
           <v-card>
-            <h3 class="pl-4">Delta Tables</h3>
-            <Vue3EasyDataTable
-              table-class-name="customize-table"
-              :headers="headers"
-              :items="items"
-              :sort-by="sortBy"
-              :sort-type="sortType"
-            />
+            <h3 class="pl-4">Delta Response</h3>
+            <p>{{ messageoutput }}</p>
           </v-card>
         </v-col>
       </v-row>
@@ -47,10 +41,33 @@
 export default {
   data() {
         return {
+          folderPath: '',
+          tableName: '',
+          messageoutput: '',
           selectedOptions: ['Append'],
           options: ['Append','Overwrite'],
+          WS: null,
         }
-      }
+      },
+    methods: {
+      connectWebSocket() {
+        this.WS = new WebSocket("ws://localhost:8081/ws");
+        this.WS.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            this.messageoutput = data;
+        }
+      },
+      processData() {
+        this.WS.send(JSON.stringify({ request_from: 'delta', request_endpoint: 'ingestdata', request_args: { 
+          request_tablename : this.tableName,
+          request_folderpath : this.folderPath,
+          request_method : this.selectedOptions
+        } }));
+      },
+    },
+    created() {
+        this.connectWebSocket(); // Initialize the WebSocket connection when the component is created
+    },
 }
 </script>
 
