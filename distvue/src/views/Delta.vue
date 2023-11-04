@@ -44,8 +44,8 @@ export default {
           folderPath: '',
           tableName: '',
           messageoutput: '',
-          selectedOptions: ['Append'],
-          options: ['Append','Overwrite'],
+          selectedOptions: ['Overwrite'],
+          options: ['Overwrite', 'Append'],
           WS: null,
         }
       },
@@ -58,6 +58,7 @@ export default {
         }
       },
       processData() {
+        this.messageoutput = "Processing Request..."
         this.WS.send(JSON.stringify({ request_from: 'delta', request_endpoint: 'ingestdata', request_args: { 
           request_tablename : this.tableName,
           request_folderpath : this.folderPath,

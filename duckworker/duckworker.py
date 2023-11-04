@@ -15,11 +15,11 @@ conn = duckdb.connect(':memory:')
 async def querydata(request: Request):
     data = await request.json()
     print(data)
-    query_result = await process_duck_query(conn,data['request_query'],data['request_contents'])
+    query_result = await process_duck_query(conn,data['request_query'], data['request_contents'], data['request_render'])
     return json.dumps(query_result, indent=4)
 
 
-async def process_duck_query(conn, sql_query, request_contents):
+async def process_duck_query(conn, sql_query, request_contents, render_size):
     pattern = r'=\(\^\)(\w+)'
     matches = re.findall(pattern, sql_query)
     delta_tables = []
@@ -40,13 +40,12 @@ async def process_duck_query(conn, sql_query, request_contents):
     
     tostream = conn.execute(new_sql_query).fetch_record_batch(chunk_size)
 
-    num_rows, num_columns , pandas_chunk = await streamer_step(tostream)
+    num_rows, num_columns , pandas_chunk = await streamer_step(tostream,render_size)
     json_response = create_json_responses(pandas_chunk, request_contents)
     json_response['data']['message'] = f"Queried Result Size: {str(num_rows)}, {str(num_columns)}"
     return json_response
 
-async def streamer_step(to_stream):
-    nrows = 10
+async def streamer_step(to_stream, render_size):
     num_rows = 0
     num_columns = len(to_stream.schema)  # Get the number of columns from the schema
     while True:
@@ -55,6 +54,5 @@ async def streamer_step(to_stream):
             num_rows += len(chunk)  # Increment the row count for each chunk
         except StopIteration:
             break
-    print(chunk.slice(length = nrows))
-    pandas_chunk = chunk.slice(length = nrows).to_pandas()
+    pandas_chunk = chunk.slice(length = render_size + 1).to_pandas()
     return num_rows, num_columns , pandas_chunk

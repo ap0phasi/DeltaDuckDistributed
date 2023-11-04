@@ -23,6 +23,19 @@
             <v-btn color="primary" @click="processData">Submit</v-btn>
           </v-col>
         </v-row>
+        <v-row class="fill-height">
+          <v-col class="pr-10 pl-5">
+            <v-slider
+              v-model="render_slider"
+              thumb-label
+              :min="1"
+              :max="1000"
+              :step="1"
+              color=var(--primary)
+              label="Render Data Size"
+            ></v-slider>
+          </v-col>
+        </v-row>
       </v-card>
   
       <!-- Text outputs -->
@@ -34,6 +47,7 @@
           </v-card>
         </v-col>
       </v-row>
+      <!-- Chart outputs -->
       <v-row>
         <v-col>
           <v-card v-if="selectedOptions.includes('Chart')">
@@ -42,6 +56,7 @@
           </v-card>
         </v-col>
       </v-row>
+      <!-- Table outputs -->
       <v-row>
         <v-col>
           <v-card v-if="selectedOptions.includes('Table')">
@@ -69,6 +84,7 @@
       },
       data() {
         return {
+          render_slider : 10,
           inputText: '',
           selectedOptions: [],
           options: ['Message', 'Chart', 'Table'],
@@ -100,9 +116,11 @@
           }
         },
         processData() {
+          this.messageoutput = "Processing Request..."
           this.WS.send(JSON.stringify({ request_from: 'duck', request_endpoint: 'querydata', request_args: { 
             request_contents: this.selectedOptions,
-            request_query :  this.inputText
+            request_query :  this.inputText,
+            request_render : this.render_slider
           } }));
         },
       },
