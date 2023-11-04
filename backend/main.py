@@ -7,8 +7,6 @@ import numpy as np
 import pandas as pd
 import aiohttp
 
-from make_response import create_json_responses 
-
 urls = {
     "delta" : ["http://deltaworker:8002/"],
     "duck" : ["http://duckworker:8003/"]

@@ -5,7 +5,7 @@ import re
 from deltalake import DeltaTable
 from make_response import create_json_responses
 import json
-
+import numpy as np
 
 app = FastAPI()
 
@@ -14,8 +14,16 @@ conn = duckdb.connect(':memory:')
 @app.get("/querydata")
 async def querydata(request: Request):
     data = await request.json()
-    print(data)
-    query_result = await process_duck_query(conn,data['request_query'], data['request_contents'], data['request_render'])
+    if data['request_query'] == "=(^)quack":
+        # Create a sample dataframe with random values
+        num_rows = data['request_render']  # For example, 7 days in a week
+        num_columns = 3  # For example, 3 datasets
+        df = pd.DataFrame(np.random.randint(0,100,size=(num_rows, num_columns)), columns=['Data One', 'Data Two', 'Data Three'])
+
+        query_result = create_json_responses(df, data['request_contents'])
+    else:
+        query_result = await process_duck_query(conn,data['request_query'], data['request_contents'], data['request_render'])
+        
     return json.dumps(query_result, indent=4)
 
 
