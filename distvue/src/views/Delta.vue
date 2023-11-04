@@ -44,8 +44,8 @@ export default {
           folderPath: '',
           tableName: '',
           messageoutput: '',
-          selectedOptions: ['Overwrite'],
-          options: ['Overwrite', 'Append'],
+          selectedOptions: 'overwrite',
+          options: ['overwrite', 'append'],
           WS: null,
         }
       },
