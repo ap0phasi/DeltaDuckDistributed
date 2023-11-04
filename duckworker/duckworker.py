@@ -51,6 +51,7 @@ async def querydata(request: Request):
         raise HTTPException(status_code=400, detail=str(e))
 
 async def process_duck_query(conn, sql_query, request_contents, render_size):
+    # Extract all user specified DeltaTables
     pattern = r'=\(\^\)(\w+)'
     matches = re.findall(pattern, sql_query)
     delta_tables = []
@@ -60,11 +61,14 @@ async def process_duck_query(conn, sql_query, request_contents, render_size):
     for match in matches:
         delta_tables.append(match)
 
-    deltasets = {}
+    # Each DeltaTable specified by the user will need to be loaded as a DuckDB dataset
     new_sql_query = sql_query
     for delta_table in delta_tables:
+        # First connect to the DeltaTable in the data path
         dt = DeltaTable(delta_path + delta_table)
+        # Create a pyarrow dataset from the DeltaTable
         pyarrow_dataset = dt.to_pyarrow_dataset()
+        # Convert the pyarrow dataset to a DuckDB dataset to make it queryable
         locals()[delta_table] = duckdb.arrow(pyarrow_dataset)
         new_sql_query = new_sql_query.replace(f'=(^){delta_table}', delta_table)
     chunk_size = 1_000_000
