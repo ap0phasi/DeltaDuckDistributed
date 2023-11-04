@@ -9,23 +9,46 @@ import numpy as np
 
 app = FastAPI()
 
+# Default to in-memory duckdb connection
 conn = duckdb.connect(':memory:')
+
+# Allow user to request duckdb connection
+@app.get("/duckconnect")
+async def querydata(request: Request):
+    try:
+        data = await request.json()
+        global conn 
+        conn = duckdb.connect(data['conn_string'])
+        json_response = {
+            "respond_to": "settings",
+            "response_contents": ["message"],
+            "data": {
+                "message": "Connected!"
+            }
+        }
+        return json.dumps(json_response, indent=4)
+    
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/querydata")
 async def querydata(request: Request):
-    data = await request.json()
-    if data['request_query'] == "=(^)quack":
-        # Create a sample dataframe with random values
-        num_rows = data['request_render']  # For example, 7 days in a week
-        num_columns = 3  # For example, 3 datasets
-        df = pd.DataFrame(np.random.randint(0,100,size=(num_rows, num_columns)), columns=['Data One', 'Data Two', 'Data Three'])
+    try:
+        data = await request.json()
+        if data['request_query'] == "=(^)quack":
+            # Create a sample dataframe with random values
+            num_rows = data['request_render']  # For example, 7 days in a week
+            num_columns = 3  # For example, 3 datasets
+            df = pd.DataFrame(np.random.randint(0,100,size=(num_rows, num_columns)), columns=['Data One', 'Data Two', 'Data Three'])
 
-        query_result = create_json_responses(df, data['request_contents'])
-    else:
-        query_result = await process_duck_query(conn,data['request_query'], data['request_contents'], data['request_render'])
-        
-    return json.dumps(query_result, indent=4)
-
+            query_result = create_json_responses(df, data['request_contents'])
+        else:
+            query_result = await process_duck_query(conn,data['request_query'], data['request_contents'], data['request_render'])
+            
+        return json.dumps(query_result, indent=4)
+    
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 async def process_duck_query(conn, sql_query, request_contents, render_size):
     pattern = r'=\(\^\)(\w+)'
