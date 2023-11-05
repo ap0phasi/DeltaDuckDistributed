@@ -4,7 +4,7 @@ import duckdb
 import re
 from deltalake import DeltaTable
 from make_response import create_json_responses
-from delta_check import log_tables, log_query
+from delta_check import log_tables, extract_tables
 import json
 import numpy as np
 
@@ -61,7 +61,7 @@ async def querydata(request: Request):
             query_result = await process_duck_query(conn,data['request_query'], data['request_contents'], data['request_render'])
         
         # Once query is successful add the record to our table log
-        log_query(data['request_query'], conn)
+        extract_tables(data['request_query'], conn)
         
         return json.dumps(query_result, indent=4)
     

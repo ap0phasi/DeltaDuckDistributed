@@ -72,3 +72,8 @@ To see the responsiveness of the WebSocket + FastAPI combination, use the follow
 ```
 
 This generates a random dataframe to display. 
+
+
+#### DuckDB functionality
+
+For tables within the DuckDB database, familiar DuckDB functionality such as ```DESCRIBE SELECT * FROM mytable``` and ```SHOW TABLES``` work within this dashboard. 

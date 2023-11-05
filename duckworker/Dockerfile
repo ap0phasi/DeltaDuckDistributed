@@ -12,6 +12,7 @@ RUN pip install duckdb==0.9.1
 RUN pip install requests
 RUN pip install pyarrow
 RUN pip install asyncio
+RUN pip install sqlparse
 
 COPY . .
 
