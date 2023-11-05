@@ -43,7 +43,7 @@
         <v-col>
           <v-card v-if="selectedOptions.includes('Message')">
             <h3 class="pl-4">Message Output</h3>
-            <p>{{ messageoutput }}</p>
+            <p class="pl-4 pr-4 pb-4">{{ messageoutput }}</p>
           </v-card>
         </v-col>
       </v-row>
@@ -117,7 +117,7 @@
         },
         processData() {
           this.messageoutput = "Processing Request..."
-          this.WS.send(JSON.stringify({ request_from: 'duck', request_endpoint: 'querydata', request_args: { 
+          this.WS.send(JSON.stringify({ request_to: 'duck', request_endpoint: 'querydata', request_args: { 
             request_contents: this.selectedOptions,
             request_query :  this.inputText,
             request_render : this.render_slider

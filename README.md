@@ -33,7 +33,7 @@ The worker containers share a volume mount to the data folder in the parent dire
 
 ![DeltaLake Load](https://github.com/ap0phasi/DeltaDuckDistributed/blob/main/media/DeltaLake_Load.png)
 
-As the DeltaLake worker expects the subdirectory containing the csv files to be in *data/raw*, we can just provide the subdirectory name. We can choose if we want to create/overwrite a DeltaTable or if we want to append to an existing one. Finally, we provide the name of the DeltaTable and then press Load. After a moment the message should indicate the DeltaTable was successfully created or updated. 
+As the DeltaLake worker expects the subdirectory containing the csv files to be in *data/raw*, we can just provide the subdirectory name. We can choose if we want to create/overwrite a DeltaTable or if we want to append to an existing one. Finally, we provide the name of the DeltaTable and then press Load. After a moment we will see our DeltaLake directory table indicates the DeltaTable was successfully loaded. 
 
 ### DuckDB Analysis
 Once DeltaTables are created, our DuckDB worker can be used to directly query this DeltaTable in a zero-copy streaming fashion to produce charts and tables. As queries can be used to also create in-memory DuckDB tables, we will need a way to specify if we are trying to read from a DeltaTable or a DuckDB table. To accomplish this we introduce a new query convention to specify the reading from a DeltaTable:
@@ -60,6 +60,22 @@ SELECT * FROM temptable1
 
 ### Additional Features
 
+#### DuckDB Query Tracking
+
+A feature unique to this tool is the ability to track the queries used to create in-memory DuckDB tables in a zero-copy streaming fashion. On the DeltaLake Management page, loaded DeltaTables are displayed with the =(^) convention. If you run a query such as:
+
+```
+CREATE TABLE IF NOT EXISTS temp1 AS SELECT * FROM =(^)climate
+```
+The *temp1* table will be created in-memory and the DeltaLake Management page will update showing the new table, the query used to create it, and the parent tables from which the new table is derived. This also works for **JOIN** and **UNION** queries such as:
+
+```
+CREATE TABLE IF NOT EXISTS temp2 AS SELECT * FROM =(^)climate UNION ALL SELECT * FROM temp1
+```
+In a case like this where a DeltaTable is being unioned with an in-memory DuckDB table, a new row entry in our DeltaLake tracker will be added for each parent table:
+
+![DeltaLake Tracking](https://github.com/ap0phasi/DeltaDuckDistributed/blob/main/media/DeltaLake_Tracker.png)
+
 #### Custom DuckDB Connections
 
 In **Settings** a custom DuckDB connection string can be provided, allowing for users to provide tokens for MotherDuck connections. 
@@ -72,3 +88,8 @@ To see the responsiveness of the WebSocket + FastAPI combination, use the follow
 ```
 
 This generates a random dataframe to display. 
+
+
+#### DuckDB functionality
+
+For tables within the DuckDB database, familiar DuckDB functionality such as ```DESCRIBE SELECT * FROM mytable``` and ```SHOW TABLES``` work within this dashboard. 
