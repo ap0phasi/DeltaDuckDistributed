@@ -49,7 +49,6 @@ def log_tables(path, connection):
 def extract_tables(sql,connection):
     # Parse the SQL query
     parsed = sqlparse.parse(sql)[0]
-    
     # This will store the results
     new_table = None
     source_tables = []
@@ -72,11 +71,15 @@ def extract_tables(sql,connection):
             
         # If the created table is found assume everything else is source
         elif create_table_populated and isinstance(item, Identifier):
-            source_tables.append(item.get_real_name())
+            # Handle =(^)convention
+            itemname = item.value
+            pattern = r'\(\^\)(\w+)'
+            if bool(re.search(pattern,itemname)):
+                itemname = "=" + itemname
+            source_tables.append(itemname)
             create_table_populated = True
     if new_table is not None:
         write_table_log(sql,new_table,source_tables,connection)
-    
     return "Parsed"
 
 def write_table_log(query,new_table,source_tables,connection):

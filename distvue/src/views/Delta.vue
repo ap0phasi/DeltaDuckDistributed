@@ -26,7 +26,7 @@
         <v-col>
           <v-card>
             <h3 class="pl-4">Delta Response</h3>
-            <p>{{ messageoutput }}</p>
+            <p class="pl-4 pr-4 pb-4">{{ messageoutput }}</p>
           </v-card>
         </v-col>
       </v-row>
