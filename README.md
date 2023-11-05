@@ -31,7 +31,7 @@ You can access the vue frontend at **http://localhost:80**.
 ### DeltaLake Management
 The worker containers share a volume mount to the data folder in the parent directory. The DeltaLake worker is configured to parse all the csvs in a provided raw data directory and create a DeltaTable. So if we have some csv files in the directory *data/raw/climate* we can use the dashboard to load the data into a DeltaLake on the **DeltaLake Manage** tab:
 
-![DeltaLake Load](https://github.com/ap0phasi/DeltaDuckDistributed/blob/main/media/DeltaLake_Load.png)
+![DeltaLake Load](https://github.com/ap0phasi/DeltaDuckDistributed/blob/main/media/DeltaLake_Load1.png)
 
 As the DeltaLake worker expects the subdirectory containing the csv files to be in *data/raw*, we can just provide the subdirectory name. We can choose if we want to create/overwrite a DeltaTable or if we want to append to an existing one. Finally, we provide the name of the DeltaTable and then press Load. After a moment we will see our DeltaLake directory table indicates the DeltaTable was successfully loaded. 
 
