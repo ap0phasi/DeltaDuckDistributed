@@ -93,3 +93,8 @@ This generates a random dataframe to display.
 #### DuckDB functionality
 
 For tables within the DuckDB database, familiar DuckDB functionality such as ```DESCRIBE SELECT * FROM mytable``` and ```SHOW TABLES``` work within this dashboard. 
+
+## Demo
+
+Please see the short demo below:
+![DeltaDuck Demo](https://github.com/ap0phasi/DeltaDuckDistributed/blob/main/media/DeltaDuck_Demo.gif)
