@@ -9,7 +9,7 @@ RUN pip install requests
 RUN pip install asyncio
 RUN pip install numpy
 RUN pip install pandas
-RUN pip install aiohttp
+RUN pip install aiormq
 
 COPY . .
 

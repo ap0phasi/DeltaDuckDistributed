@@ -12,6 +12,9 @@ services:
       context: backend
     ports:
       - 8081:8001
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   deltaworker:
     build:
@@ -20,6 +23,9 @@ services:
       - 8082:8002
     volumes:
       - ./data:/usr/src/app/data
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   duckworker:
     build:
@@ -28,5 +34,19 @@ services:
       - 8083:8003
     volumes:
       - ./data:/usr/src/app/data
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    ports:
+      - "15672:15672" # Management interface
+      - "5672:5672"   # RabbitMQ server
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping", "-q"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
 

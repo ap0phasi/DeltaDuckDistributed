@@ -12,10 +12,12 @@ RUN pip install duckdb==0.9.1
 RUN pip install requests
 RUN pip install pyarrow
 RUN pip install asyncio
+RUN pip install aiormq
 
 COPY . .
 
 EXPOSE 8002
 RUN mkdir data
 
-CMD ["uvicorn", "deltaworker:app", "--reload", "--host", "0.0.0.0", "--port", "8002"]
+# Run rpc_server.py when the container launches
+CMD ["python", "delta_rpc_server.py"]
