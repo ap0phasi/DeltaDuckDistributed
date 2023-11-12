@@ -12,36 +12,54 @@ import aiormq
 import aiormq.abc
 
 conn = duckdb.connect(':memory:')
+
+# For error handling
+def create_error_response(code, message, error_type=None):
+    response = {
+        "status": "error",
+        "code": code,
+        "message": message,
+    }
+    if error_type:
+        response["error_type"] = error_type
+    return response
     
-#@app.get("/ingestdata")
+# Ingest Data by scraping directory for csvs
+# Endpoint equivalent for /ingestdata
 async def ingestdata(request_json):
     async def read_and_process_csv(file):
         # Read and process CSV asynchronously
         df = await asyncio.to_thread(pd.read_csv, file)
         df = df.astype(str)
         return df
-    data = request_json['request_args']
+    
+    try:
+        data = request_json['request_args']
 
-    # Use asyncio.gather to read and process CSV files in parallel
-    csv_files = glob2.glob(os.path.join(f'data/raw/{data["request_folderpath"]}/', "*.csv"))
-    processed_data = await asyncio.gather(*(read_and_process_csv(file) for file in csv_files))
+        # Use asyncio.gather to read and process CSV files in parallel
+        csv_files = glob2.glob(os.path.join(f'data/raw/{data["request_folderpath"]}/', "*.csv"))
+        processed_data = await asyncio.gather(*(read_and_process_csv(file) for file in csv_files))
 
-    # Combine the processed data
-    combined_df = pd.concat(processed_data)
+        # Combine the processed data
+        combined_df = pd.concat(processed_data)
 
-    # Asynchronously write to DeltaLake storage
-    loop = asyncio.get_event_loop()
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        await loop.run_in_executor(executor, lambda: write_deltalake(f'data/deltalake/{data["request_tablename"]}', combined_df, mode=data["request_method"]))
+        # Asynchronously write to DeltaLake storage
+        loop = asyncio.get_event_loop()
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            await loop.run_in_executor(executor, lambda: write_deltalake(f'data/deltalake/{data["request_tablename"]}', combined_df, mode=data["request_method"]))
 
-    json_response = {
-        "respond_to": "delta",
-        "response_contents": ["message"],
-        "data": {
-            "message": "DeltaLake stored as " + data["request_tablename"]
+        json_response = {
+            "respond_to": "delta",
+            "response_contents": ["message"],
+            "data": {
+                "message": "DeltaLake stored as " + data["request_tablename"]
+            }
         }
-    }
-    return json.dumps(json_response, indent=4)
+        return json.dumps(json_response, indent=4)
+    
+    except Exception as e:
+        response = create_error_response(500, "Internal server error")
+        return json.dumps(response, indent=4)
 
 # Set up endpoint dictionary
 endpoints = {

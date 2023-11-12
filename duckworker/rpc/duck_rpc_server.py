@@ -10,6 +10,7 @@ from make_response import create_json_responses
 from delta_check import log_tables, extract_tables
 import json
 import numpy as np
+import os
 
 # Establish functions for different tasks on this worker.
 # These are reused from the FastAPI without the API decorator.
@@ -17,6 +18,17 @@ import numpy as np
 
 # Default to in-memory duckdb connection
 conn = duckdb.connect(':memory:')
+
+# For error handling
+def create_error_response(code, message, error_type=None):
+    response = {
+        "status": "error",
+        "code": code,
+        "message": message,
+    }
+    if error_type:
+        response["error_type"] = error_type
+    return response
 
 # Check what delta lakes exist
 #@app.get("/checktable")
@@ -32,38 +44,49 @@ async def checktable(request_json):
     return json.dumps(json_response, indent=4)
 
 # Allow user to request duckdb connection
-#@app.get("/duckconnect")
+# Endpoint equivalent for /duckconnect
 async def duckconnect(request_json):
-    data = request_json['request_args']
-    global conn 
-    conn = duckdb.connect(data['conn_string'])
-    json_response = {
-        "respond_to": "settings",
-        "response_contents": ["message"],
-        "data": {
-            "message": "Connected!"
+    try:
+        data = request_json['request_args']
+        global conn 
+        conn = duckdb.connect(data['conn_string'])
+        json_response = {
+            "respond_to": "settings",
+            "response_contents": ["message"],
+            "data": {
+                "message": "Connected!"
+            }
         }
-    }
+        
+        return json.dumps(json_response, indent=4)
     
-    return json.dumps(json_response, indent=4)
-#Perform data querying
-#@app.get("/querydata")
+    except Exception as e:
+        response = create_error_response(500, "Internal server error")
+        return json.dumps(response, indent=4)
+# Perform data querying
+# Endpoint equivalent for /querydata
 async def querydata(request_json):
-    data = request_json['request_args']
-    if data['request_query'] == "=(^)quack":
-        # Create a sample dataframe with random values
-        num_rows = data['request_render']  # For example, 7 days in a week
-        num_columns = 3  # For example, 3 datasets
-        df = pd.DataFrame(np.random.randint(0,100,size=(num_rows, num_columns)), columns=['Data One', 'Data Two', 'Data Three'])
+    try:
+        data = request_json['request_args']
+        if data['request_query'] == "=(^)quack":
+            # Create a sample dataframe with random values
+            num_rows = data['request_render']  # For example, 7 days in a week
+            num_columns = 3  # For example, 3 datasets
+            df = pd.DataFrame(np.random.randint(0,100,size=(num_rows, num_columns)), columns=['Data One', 'Data Two', 'Data Three'])
 
-        query_result = create_json_responses(df, data['request_contents'])
-    else:
-        query_result = await process_duck_query(conn,data['request_query'], data['request_contents'], data['request_render'])
+            query_result = create_json_responses(df, data['request_contents'])
+        else:
+            query_result = await process_duck_query(conn,data['request_query'], data['request_contents'], data['request_render'])
+        
+        # Once query is successful add the record to our table log
+        extract_tables(data['request_query'], conn)
+        
+        return json.dumps(query_result, indent=4)
     
-    # Once query is successful add the record to our table log
-    extract_tables(data['request_query'], conn)
-    
-    return json.dumps(query_result, indent=4)
+    except Exception as e:
+        response = create_error_response(500, "Internal server error")
+        return json.dumps(response, indent=4)
+
 
 async def process_duck_query(conn, sql_query, request_contents, render_size):
     # Extract all user specified DeltaTables
@@ -80,7 +103,8 @@ async def process_duck_query(conn, sql_query, request_contents, render_size):
     new_sql_query = sql_query
     for delta_table in delta_tables:
         # First connect to the DeltaTable in the data path
-        dt = DeltaTable(delta_path + delta_table)
+        if os.path.exists(delta_path + delta_table):
+            dt = DeltaTable(delta_path + delta_table)
         # Create a pyarrow dataset from the DeltaTable
         pyarrow_dataset = dt.to_pyarrow_dataset()
         # Convert the pyarrow dataset to a DuckDB dataset to make it queryable

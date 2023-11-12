@@ -47,7 +47,7 @@ services:
       - "5672:5672"   # RabbitMQ server
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping", "-q"]
-      interval: 30s
+      interval: 10s
       timeout: 10s
       retries: 5
 

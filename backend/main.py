@@ -97,22 +97,26 @@ async def websocket_endpoint(websocket: WebSocket):
         # Extract JSON
         message_json = json.loads(message_text)
         
-        if message_routes[message_json.get('request_to')] == "rpc":
-            # Call RPC and await response
-            response_message = await backend_rpc.call(json.dumps(message_json))
-            # I am confused why I need to dump the json, shouldn't the response already be that?
-            json_response = json.dumps(response_message, indent=4)
-            await websocket.send_text(json_response)
-            
-        elif message_routes[message_json.get('request_to')] == "api":
-            message_requestto = message_json.get('request_to')
-            message_requestendpoint = message_json.get('request_endpoint')
+        try:
+            if message_routes[message_json.get('request_to')] == "rpc":
+                # Call RPC and await response
+                response_message = await backend_rpc.call(json.dumps(message_json))
+                # I am confused why I need to dump the json, shouldn't the response already be that?
+                json_response = json.dumps(response_message, indent=4)
+                await websocket.send_text(json_response)
+                
+            elif message_routes[message_json.get('request_to')] == "api":
+                message_requestto = message_json.get('request_to')
+                message_requestendpoint = message_json.get('request_endpoint')
 
-            # Attempt to send the request and get a response
-            json_response = await send_request(
-                url_routes[message_requestto] + message_requestendpoint,
-                json=message_json.get('request_args')
-            )
+                # Attempt to send the request and get a response
+                json_response = await send_request(
+                    url_routes[message_requestto] + message_requestendpoint,
+                    json=message_json.get('request_args')
+                )
 
-            # Send the JSON response data
-            await websocket.send_text(json_response)
+                # Send the JSON response data
+                await websocket.send_text(json_response)
+        except Exception as e:
+            # Handle any other exceptions that may occur
+            await websocket.send_text(json.dumps({'error': 'An unexpected error occurred: ' + str(e)}))

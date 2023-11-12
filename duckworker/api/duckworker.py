@@ -7,6 +7,7 @@ from make_response import create_json_responses
 from delta_check import log_tables, extract_tables
 import json
 import numpy as np
+import os
 
 app = FastAPI()
 
@@ -83,7 +84,8 @@ async def process_duck_query(conn, sql_query, request_contents, render_size):
     new_sql_query = sql_query
     for delta_table in delta_tables:
         # First connect to the DeltaTable in the data path
-        dt = DeltaTable(delta_path + delta_table)
+        if os.path.exists(delta_path + delta_table):
+            dt = DeltaTable(delta_path + delta_table)
         # Create a pyarrow dataset from the DeltaTable
         pyarrow_dataset = dt.to_pyarrow_dataset()
         # Convert the pyarrow dataset to a DuckDB dataset to make it queryable
