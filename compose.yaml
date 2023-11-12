@@ -19,6 +19,7 @@ services:
   deltaworker:
     build:
       context: deltaworker
+      dockerfile: Dockerfile_rpc
     ports:
       - 8082:8002
     volumes:
@@ -30,6 +31,7 @@ services:
   duckworker:
     build:
       context: duckworker
+      dockerfile: Dockerfile_rpc
     ports:
       - 8083:8003
     volumes:

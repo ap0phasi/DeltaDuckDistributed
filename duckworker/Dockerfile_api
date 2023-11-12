@@ -2,6 +2,9 @@ FROM python:3.9-slim-buster
 
 WORKDIR /usr/src/app
 
+RUN pip install fastapi
+RUN pip install uvicorn
+RUN pip install websockets
 RUN pip install pandas
 RUN pip install deltalake
 RUN pip install glob2
@@ -10,12 +13,11 @@ RUN pip install requests
 RUN pip install pyarrow
 RUN pip install asyncio
 RUN pip install sqlparse
-RUN pip install aiormq
 
-COPY . .
+COPY helpers/ .
+COPY api/ .
 
 EXPOSE 8003
 RUN mkdir data
 
-# Run rpc_server.py when the container launches
-CMD ["python", "duck_rpc_server.py"]
+CMD ["uvicorn", "duckworker:app", "--reload", "--host", "0.0.0.0", "--port", "8003"]
