@@ -57,7 +57,7 @@ class BackendRpcClient:
         )
 
         response_json = await future
-        return json.loads(response_json.decode())
+        return response_json.decode()
     
 # Make request to RPC
 async def make_request(message_json):
@@ -100,10 +100,8 @@ async def websocket_endpoint(websocket: WebSocket):
         try:
             if message_routes[message_json.get('request_to')] == "rpc":
                 # Call RPC and await response
-                response_message = await backend_rpc.call(json.dumps(message_json))
-                # I am confused why I need to dump the json, shouldn't the response already be that?
-                json_response = json.dumps(response_message, indent=4)
-                await websocket.send_text(json_response)
+                response_message = await backend_rpc.call(message_text)
+                await websocket.send_text(response_message)
                 
             elif message_routes[message_json.get('request_to')] == "api":
                 message_requestto = message_json.get('request_to')
