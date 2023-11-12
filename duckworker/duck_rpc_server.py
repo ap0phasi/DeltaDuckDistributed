@@ -107,19 +107,21 @@ async def streamer_step(to_stream, render_size):
     pandas_chunk = chunk.slice(length = render_size + 1).to_pandas()
     return num_rows, num_columns , pandas_chunk
 
+# Set up endpoint dictionary
+endpoints = {
+    "checktable": checktable,
+    "duckconnect": duckconnect,
+    "querydata": querydata,
+}
+
 
 # RPC Code
 async def on_message(message: aiormq.abc.DeliveredMessage):
     print("RECEVIED MESSAGE")
     request_json = json.loads(message.body.decode())
     
-    # Set up API Style routing to "endpoints":
-    if request_json["request_endpoint"] == "checktable":
-        raw_response = await checktable(request_json)
-    elif request_json["request_endpoint"] == "duckconnect":
-        raw_response = await duckconnect(request_json)
-    elif request_json["request_endpoint"] == "querydata":
-        raw_response = await querydata(request_json)
+    # Perform API Style routing to "endpoints":
+    raw_response = await endpoints[request_json["request_endpoint"]](request_json)
         
     response = raw_response.encode()
 
@@ -146,7 +148,7 @@ async def main():
     # Declaring queue
     declare_ok = await channel.queue_declare('duck_rpc')
 
-    # Start listening the queue with name 'hello'
+    # Start listening to the queue
     await channel.basic_consume(declare_ok.queue, on_message)
 
 

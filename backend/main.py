@@ -73,15 +73,10 @@ async def websocket_endpoint(websocket: WebSocket):
     while True:
         # Receive message
         message_text = await websocket.receive_text()
+        # Extract JSON
         message_json = json.loads(message_text)
-        json_response = await backend_rpc.call(json.dumps(message_json))
-        # # Send the JSON chart data
-        # json_response = {
-        #     "respond_to": "delta",
-        #     "response_contents": ["message"],
-        #     "data": {
-        #         "message": "Hello"
-        #     }
-        # }
-        json_response = json.dumps(json_response, indent=4)
+        # Call RPC and await response
+        response_message = await backend_rpc.call(json.dumps(message_json))
+        # I am confused why I need to dump the json, shouldn't the response already be that?
+        json_response = json.dumps(response_message, indent=4)
         await websocket.send_text(json_response)

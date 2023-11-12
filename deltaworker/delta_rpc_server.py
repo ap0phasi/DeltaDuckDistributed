@@ -42,15 +42,18 @@ async def ingestdata(request_json):
         }
     }
     return json.dumps(json_response, indent=4)
-    
+
+# Set up endpoint dictionary
+endpoints = {
+    "ingestdata": ingestdata
+}
     
 # RPC Code
 async def on_message(message: aiormq.abc.DeliveredMessage):
     request_json = json.loads(message.body.decode())
     
     # Set up API Style routing to "endpoints":
-    if request_json["request_endpoint"] == "ingestdata":
-        raw_response = await ingestdata(request_json)
+    raw_response = await endpoints[request_json["request_endpoint"]](request_json)
         
     response = raw_response.encode()
 
@@ -77,7 +80,7 @@ async def main():
     # Declaring queue
     declare_ok = await channel.queue_declare('delta_rpc')
 
-    # Start listening the queue with name 'hello'
+    # Start listening to the queue
     await channel.basic_consume(declare_ok.queue, on_message)
 
 
