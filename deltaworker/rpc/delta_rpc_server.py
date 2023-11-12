@@ -35,13 +35,12 @@ async def ingestdata(request_json):
     
     try:
         data = request_json['request_args']
-
-        # Use asyncio.gather to read and process CSV files in parallel
-        csv_files = glob2.glob(os.path.join(f'data/raw/{data["request_folderpath"]}/', "*.csv"))
-        processed_data = await asyncio.gather(*(read_and_process_csv(file) for file in csv_files))
-
-        # Combine the processed data
-        combined_df = pd.concat(processed_data)
+        
+        # Use DuckDB to query from all csv files in specified directory
+        dirpath = os.path.join(f'data/raw/{data["request_folderpath"]}/', "*.csv")
+        # DeltaTables need Pandas DataFrames that are all in string
+        duck_query = f"SELECT * FROM read_csv_auto('{dirpath}', all_varchar = true)"
+        combined_df = conn.execute(duck_query).fetchdf()
 
         # Asynchronously write to DeltaLake storage
         loop = asyncio.get_event_loop()
