@@ -27,12 +27,6 @@ def create_error_response(code, message, error_type=None):
 # Ingest Data by scraping directory for csvs
 # Endpoint equivalent for /ingestdata
 async def ingestdata(request_json):
-    async def read_and_process_csv(file):
-        # Read and process CSV asynchronously
-        df = await asyncio.to_thread(pd.read_csv, file)
-        df = df.astype(str)
-        return df
-    
     try:
         data = request_json['request_args']
         

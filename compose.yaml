@@ -10,6 +10,9 @@ services:
   backend:
     build:
       context: backend
+      args:
+        delta_worker_type: ${delta_worker_type}
+        duck_worker_type: ${duck_worker_type}
     ports:
       - 8081:8001
     depends_on:
@@ -19,7 +22,8 @@ services:
   deltaworker:
     build:
       context: deltaworker
-      dockerfile: Dockerfile_rpc
+      args:
+        worker_type: ${delta_worker_type}
     ports:
       - 8082:8002
     volumes:
@@ -31,7 +35,8 @@ services:
   duckworker:
     build:
       context: duckworker
-      dockerfile: Dockerfile_rpc
+      args:
+        worker_type: ${duck_worker_type}
     ports:
       - 8083:8003
     volumes:
@@ -45,9 +50,9 @@ services:
     ports:
       - "15672:15672" # Management interface
       - "5672:5672"   # RabbitMQ server
-    healthcheck:
+    healthcheck: # Healthcheck is required for starting workers
       test: ["CMD", "rabbitmq-diagnostics", "ping", "-q"]
-      interval: 10s
+      interval: 30s
       timeout: 10s
       retries: 5
 

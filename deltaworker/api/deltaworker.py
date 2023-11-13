@@ -14,11 +14,6 @@ conn = duckdb.connect(':memory:')
     
 @app.get("/ingestdata")
 async def ingestdata(request: Request):
-    async def read_and_process_csv(file):
-        # Read and process CSV asynchronously
-        df = await asyncio.to_thread(pd.read_csv, file)
-        df = df.astype(str)
-        return df
     try:
         data = await request.json()
 

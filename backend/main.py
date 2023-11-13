@@ -5,6 +5,7 @@ import aiormq
 import aiormq.abc
 import json
 import aiohttp
+import os
 
 import numpy as np
 import pandas as pd
@@ -78,10 +79,13 @@ url_routes = {
     "duck" : "http://duckworker:8003/"
 }
 
+# Get whatever worker type was specified in docker-compose. 
+delta_worker_type = os.getenv('delta_worker_type')
+duck_worker_type = os.getenv('duck_worker_type')
 # Set message routes
 message_routes = {
-    "delta" : "rpc",
-    "duck" : "rpc"
+    "delta" : delta_worker_type,
+    "duck" : duck_worker_type
 }
 
 @app.websocket("/ws")
