@@ -31,8 +31,6 @@ FROM base AS branch-version-rpc
 # Unique package installation
 RUN pip install aiormq
 COPY rpc/ .
-# Port exposure is not needed here but we are assigning in docker-compose
-EXPOSE 8002
 # Run rpc_server.py when the container launches
 CMD ["python", "delta_rpc_server.py"]
 

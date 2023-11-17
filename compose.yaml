@@ -24,8 +24,9 @@ services:
       context: deltaworker
       args:
         worker_type: ${delta_worker_type}
-    ports:
-      - 8082:8002
+    deploy:
+      mode: replicated
+      replicas: ${delta_worker_replicas}
     volumes:
       - ./data:/usr/src/app/data
     depends_on:
@@ -37,14 +38,15 @@ services:
       context: duckworker
       args:
         worker_type: ${duck_worker_type}
-    ports:
-      - 8083:8003
+    deploy:
+      mode: replicated
+      replicas: ${duck_worker_replicas}
     volumes:
       - ./data:/usr/src/app/data
     depends_on:
       rabbitmq:
         condition: service_healthy
-
+    
   rabbitmq:
     image: "rabbitmq:3-management"
     ports:

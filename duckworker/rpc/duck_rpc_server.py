@@ -168,6 +168,7 @@ async def main():
 
     # Creating a channel
     channel = await connection.channel()
+    await channel.basic_qos(prefetch_count=1)
 
     # Declaring queue
     declare_ok = await channel.queue_declare('duck_rpc')

@@ -31,8 +31,6 @@ FROM base AS branch-version-rpc
 RUN pip install aiormq
 COPY helpers/ .
 COPY rpc/ .
-# Port exposure is not needed here but we are assigning in docker-compose
-EXPOSE 8003
 # Run rpc_server.py when the container launches
 CMD ["python", "duck_rpc_server.py"]
 
