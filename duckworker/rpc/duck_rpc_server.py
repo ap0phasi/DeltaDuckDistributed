@@ -20,7 +20,15 @@ import os
 conn = duckdb.connect(':memory:')
 
 # Postgres Connection
-conn.execute("ATTACH 'dbname=mydatabase user=user password=password host=postgres' AS postgres (TYPE postgres);USE postgres")
+def connect_postgres():
+    conn.execute("ATTACH 'dbname=mydatabase user=user password=password host=postgres' AS postgres (TYPE postgres)")
+    
+def refresh_postgres():
+    conn.execute("DETACH postgres")
+    connect_postgres()
+
+# Initial postgres connection
+connect_postgres()
 
 # For error handling
 def create_error_response(code, message, error_type=None):
@@ -34,7 +42,7 @@ def create_error_response(code, message, error_type=None):
     return response
 
 # Check what delta lakes exist
-#@app.get("/checktable")
+# Endpoint equivalent for /checktable
 async def checktable(request_json):
     log_tables('data/deltalake', conn)
     json_response = {
@@ -79,6 +87,9 @@ async def querydata(request_json):
 
             query_result = create_json_responses(df, data['request_contents'])
         else:
+            # Refresh connection with Postgres, only if postgres is mentioned
+            if "postgres" in data['request_query']:
+                refresh_postgres()
             query_result = await process_duck_query(conn,data['request_query'], data['request_contents'], data['request_render'])
         
         # Once query is successful add the record to our table log
