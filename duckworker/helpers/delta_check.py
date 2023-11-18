@@ -17,7 +17,7 @@ def log_tables(path, connection):
 
     # Ensure the table exists
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS __deltalake_dir (
+    CREATE TABLE IF NOT EXISTS postgres.__deltalake_dir (
         TableName VARCHAR,
         Parent VARCHAR,
         Query VARCHAR
@@ -31,13 +31,13 @@ def log_tables(path, connection):
         if os.path.isdir(full_path):
             # Delete existing rows with the same TableName and Parent (which is NULL in this case)
             cursor.execute("""
-                DELETE FROM __deltalake_dir
+                DELETE FROM postgres.__deltalake_dir
                 WHERE TableName = ? AND Parent IS NULL
             """, ("=(^)" + entry,))
             
             # Now that any potential conflicts have been removed, insert the new row
             cursor.execute("""
-                INSERT INTO __deltalake_dir (TableName, Parent, Query)
+                INSERT INTO postgres.__deltalake_dir (TableName, Parent, Query)
                 VALUES (?, ?, ?)
             """, ("=(^)" + entry, None, None))
 
@@ -86,7 +86,7 @@ def write_table_log(query,new_table,source_tables,connection):
     cursor = connection.cursor()
     for source_table in source_tables:
         cursor.execute("""
-            INSERT INTO __deltalake_dir (TableName, Parent, Query)
+            INSERT INTO postgres.__deltalake_dir (TableName, Parent, Query)
             VALUES (?, ?, ?)
         """, (new_table, source_table, query))
     
@@ -101,7 +101,7 @@ if __name__=="__main__":
 
     # Ensure the table exists
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS __deltalake_dir (
+    CREATE TABLE IF NOT EXISTS postgres.__deltalake_dir (
         TableName VARCHAR,
         Parent VARCHAR,
         Query VARCHAR

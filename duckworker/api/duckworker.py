@@ -14,6 +14,9 @@ app = FastAPI()
 # Default to in-memory duckdb connection
 conn = duckdb.connect(':memory:')
 
+# Postgres Connection
+conn.execute("ATTACH 'dbname=mydatabase user=user password=password host=postgres' AS main (TYPE postgres);USE postgres")
+
 # Check what delta lakes exist
 @app.get("/checktable")
 async def checktables(request: Request):

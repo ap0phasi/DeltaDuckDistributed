@@ -19,6 +19,9 @@ import os
 # Default to in-memory duckdb connection
 conn = duckdb.connect(':memory:')
 
+# Postgres Connection
+conn.execute("ATTACH 'dbname=mydatabase user=user password=password host=postgres' AS postgres (TYPE postgres);USE postgres")
+
 # For error handling
 def create_error_response(code, message, error_type=None):
     response = {
