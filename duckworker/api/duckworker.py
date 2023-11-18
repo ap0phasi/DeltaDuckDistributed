@@ -15,7 +15,15 @@ app = FastAPI()
 conn = duckdb.connect(':memory:')
 
 # Postgres Connection
-conn.execute("ATTACH 'dbname=mydatabase user=user password=password host=postgres' AS main (TYPE postgres);USE postgres")
+def connect_postgres():
+    conn.execute("ATTACH 'dbname=mydatabase user=user password=password host=postgres' AS postgres (TYPE postgres)")
+    
+def refresh_postgres():
+    conn.execute("DETACH postgres")
+    connect_postgres()
+
+# Initial postgres connection
+connect_postgres()
 
 # Check what delta lakes exist
 @app.get("/checktable")
@@ -62,6 +70,9 @@ async def querydata(request: Request):
 
             query_result = create_json_responses(df, data['request_contents'])
         else:
+            # Refresh connection with Postgres, only if postgres is mentioned
+            if "postgres" in data['request_query']:
+                refresh_postgres()
             query_result = await process_duck_query(conn,data['request_query'], data['request_contents'], data['request_render'])
         
         # Once query is successful add the record to our table log
