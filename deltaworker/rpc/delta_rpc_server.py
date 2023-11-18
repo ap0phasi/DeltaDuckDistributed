@@ -12,6 +12,16 @@ import aiormq
 import aiormq.abc
 
 conn = duckdb.connect(':memory:')
+# Postgres Connection
+def connect_postgres():
+    conn.execute("ATTACH 'dbname=mydatabase user=user password=password host=postgres' AS postgres (TYPE postgres)")
+    
+def refresh_postgres():
+    conn.execute("DETACH postgres")
+    connect_postgres()
+
+# Initial postgres connection
+connect_postgres()
 
 # For error handling
 def create_error_response(code, message, error_type=None):
@@ -29,11 +39,18 @@ def create_error_response(code, message, error_type=None):
 async def ingestdata(request_json):
     try:
         data = request_json['request_args']
-        
-        # Use DuckDB to query from all csv files in specified directory
-        dirpath = os.path.join(f'data/raw/{data["request_folderpath"]}/', "*.csv")
-        # DeltaTables need Pandas DataFrames that are all in string
-        duck_query = f"SELECT * FROM read_csv_auto('{dirpath}', all_varchar = true)"
+        # Refresh connection with Postgres, only if postgres is mentioned
+        if "postgres" in data['request_folderpath']:
+                refresh_postgres()
+                
+        # If the folder path provided appears to be a query, solve it directly
+        if "SELECT" in data['request_folderpath']:
+            duck_query = data['request_folderpath']
+        else:
+            # Use DuckDB to query from all csv files in specified directory
+            dirpath = os.path.join(f'data/raw/{data["request_folderpath"]}/', "*.csv")
+            # DeltaTables need Pandas DataFrames that are all in string
+            duck_query = f"SELECT * FROM read_csv_auto('{dirpath}', all_varchar = true)"
         combined_df = conn.execute(duck_query).fetchdf()
 
         # Asynchronously write to DeltaLake storage

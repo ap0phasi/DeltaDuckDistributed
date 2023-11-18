@@ -9,7 +9,7 @@ RUN pip install websockets
 RUN pip install pandas
 RUN pip install deltalake
 RUN pip install glob2
-RUN pip install duckdb==0.9.1
+RUN pip install duckdb --pre --upgrade
 RUN pip install requests
 RUN pip install pyarrow
 RUN pip install asyncio

@@ -19,7 +19,7 @@
               multiple
             ></v-select>
           </v-col>
-          <v-col cols="4" md="4" class="pt-7 d-flex justify-center">
+          <v-col cols="2" md="2" class="pt-7 d-flex justify-center">
             <v-btn color="primary" @click="processData">Submit</v-btn>
           </v-col>
         </v-row>
