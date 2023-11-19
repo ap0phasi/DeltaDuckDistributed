@@ -127,9 +127,14 @@ If there is no need to run a distributed swarm of workers, it is recommended tha
 
 With the persistence of temporary data using Postgres, there is the added benefit of being able to share data between our separate Duck and Delta workers, meaning Delta workers can now write DeltaTables from temporary Postgres tables. The CSV ingestion used by the Delta worker is simply DuckDB's sniffer function ran as a SELECT * query, so functionality was added to the Delta worker to accept either a file path or a full DuckDB query. This allows for a Delta Table to be created by entering a query like this into the *CSV Folder Path* field:
 
-'''
+```
 SELECT * FROM postgres.temptable
-'''
+```
+
+## MotherDuck Functionality
+
+As this application also works for MotherDuck connections, MotherDuck can be used for data persistence instead of a local Postgres. 
+
 
 ## Demo
 
