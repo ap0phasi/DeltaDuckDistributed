@@ -16,7 +16,7 @@ conn = duckdb.connect(':memory:')
 
 # Postgres Connection
 def connect_postgres():
-    conn.execute("ATTACH 'dbname=mydatabase user=user password=password host=postgres' AS postgres (TYPE postgres)")
+    conn.execute("ATTACH 'dbname=postgres_db user=user password=password host=postgres' AS postgres (TYPE postgres)")
     
 def refresh_postgres():
     conn.execute("DETACH postgres")

@@ -13,7 +13,7 @@ RUN pip install duckdb --pre --upgrade
 RUN pip install requests
 RUN pip install pyarrow
 RUN pip install asyncio
-
+RUN pip install sqlparse
 
 RUN mkdir data
 

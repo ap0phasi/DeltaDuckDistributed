@@ -99,7 +99,7 @@ export default {
         this.WS.send(JSON.stringify({ request_to: 'duck', request_endpoint: 'querydata', request_args: { 
             request_contents: ["Table"],
             request_query :  "SELECT * FROM postgres.__deltalake_dir",
-            request_render : 1_000_000
+            request_render : 100
           } }));
       }
     },

@@ -12,38 +12,32 @@ def log_tables(path, connection):
         print(f"The path {path} is not a directory.")
         return
 
-    # Create a cursor object using the connection
     cursor = connection.cursor()
 
-    # Ensure the table exists
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS postgres.__deltalake_dir (
-        TableName VARCHAR,
-        Parent VARCHAR,
-        Query VARCHAR
-    )
-    """)
+    # Fetch existing table entries
+    deltalake_dir = connection.execute("SELECT * FROM postgres.__deltalake_dir").fetchdf()
+    existing_entries_notnull = set(row for row in deltalake_dir.loc[deltalake_dir['parent'].notnull(),"tablename"])
+    existing_entries_all = set(row for row in deltalake_dir["tablename"])
 
-    # List all entries in the directory and add or update them in the DuckDB table
-    for entry in os.listdir(path):
-        full_path = os.path.join(path, entry)
-        # Check if it is a directory
-        if os.path.isdir(full_path):
-            # Delete existing rows with the same TableName and Parent (which is NULL in this case)
-            cursor.execute("""
-                DELETE FROM postgres.__deltalake_dir
-                WHERE TableName = ? AND Parent IS NULL
-            """, ("=(^)" + entry,))
-            
-            # Now that any potential conflicts have been removed, insert the new row
-            cursor.execute("""
-                INSERT INTO postgres.__deltalake_dir (TableName, Parent, Query)
-                VALUES (?, ?, ?)
-            """, ("=(^)" + entry, None, None))
+    # Get directory contents
+    dir_entries = set("=(^)" + entry for entry in os.listdir(path) if os.path.isdir(os.path.join(path, entry)))
 
-    # Commit the transaction
+    # Determine entries to add or remove
+    entries_to_add = dir_entries - existing_entries_all
+    entries_to_remove = existing_entries_notnull - dir_entries
+
+    # Remove entries that no longer exist in the directory
+    for entry in entries_to_remove:
+        cursor.execute("DELETE FROM postgres.__deltalake_dir WHERE TableName = ? AND Parent IS NULL", (entry,))
+
+    # Add new entries from the directory
+    for entry in entries_to_add:
+        keysearch = cursor.execute("SELECT MAX(t_id) FROM postgres.__deltalake_dir").fetchdf().iloc[0,0]
+        keyval = 0 if keysearch != keysearch else keysearch + 1 
+        cursor.execute("INSERT INTO postgres.__deltalake_dir (t_id, TableName, Parent, Query) VALUES (?, ?, ?, ?)", 
+                       (str(keyval), entry, None, None))
+
     connection.commit()
-    print("Directories have been upserted into the database.")
     
 # Function to extract table names from a SQL query
 def extract_tables(sql,connection):
@@ -85,10 +79,12 @@ def extract_tables(sql,connection):
 def write_table_log(query,new_table,source_tables,connection):
     cursor = connection.cursor()
     for source_table in source_tables:
+        keysearch = cursor.execute("SELECT MAX(t_id) FROM postgres.__deltalake_dir").fetchdf().iloc[0,0]
+        keyval = 0 if keysearch != keysearch else keysearch + 1 
         cursor.execute("""
-            INSERT INTO postgres.__deltalake_dir (TableName, Parent, Query)
-            VALUES (?, ?, ?)
-        """, (new_table, source_table, query))
+            INSERT INTO postgres.__deltalake_dir (t_id, TableName, Parent, Query)
+            VALUES (?, ?, ?, ?)
+        """, (str(keyval), new_table, source_table, query))
     
 
 if __name__=="__main__":
@@ -102,6 +98,7 @@ if __name__=="__main__":
     # Ensure the table exists
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS postgres.__deltalake_dir (
+        t_id integer primary key,
         TableName VARCHAR,
         Parent VARCHAR,
         Query VARCHAR
