@@ -1,4 +1,7 @@
-from fastapi import FastAPI, WebSocket, HTTPException, Request
+import asyncio
+import aiormq
+import aiormq.abc
+
 import pandas as pd
 import duckdb
 import re
@@ -7,15 +10,40 @@ from make_response import create_json_responses
 from delta_check import log_tables, extract_tables
 import json
 import numpy as np
+import os
 
-app = FastAPI()
+# Establish functions for different tasks on this worker.
+# These are reused from the FastAPI without the API decorator.
+# The old API connection is used for reference to route functions
 
 # Default to in-memory duckdb connection
 conn = duckdb.connect(':memory:')
 
+# Postgres Connection
+def connect_postgres():
+    conn.execute("ATTACH 'dbname=postgres_db user=user password=password host=postgres' AS postgres (TYPE postgres)")
+    
+def refresh_postgres():
+    conn.execute("DETACH postgres")
+    connect_postgres()
+
+# Initial postgres connection
+connect_postgres()
+
+# For error handling
+def create_error_response(code, message, error_type=None):
+    response = {
+        "status": "error",
+        "code": code,
+        "message": message,
+    }
+    if error_type:
+        response["error_type"] = error_type
+    return response
+
 # Check what delta lakes exist
-@app.get("/checktable")
-async def checktables(request: Request):
+# Endpoint equivalent for /checktable
+async def checktable(request_json):
     log_tables('data/deltalake', conn)
     json_response = {
         "respond_to": "delta",
@@ -27,10 +55,10 @@ async def checktables(request: Request):
     return json.dumps(json_response, indent=4)
 
 # Allow user to request duckdb connection
-@app.get("/duckconnect")
-async def querydata(request: Request):
+# Endpoint equivalent for /duckconnect
+async def duckconnect(request_json):
     try:
-        data = await request.json()
+        data = request_json['request_args']
         global conn 
         conn = duckdb.connect(data['conn_string'])
         json_response = {
@@ -44,12 +72,13 @@ async def querydata(request: Request):
         return json.dumps(json_response, indent=4)
     
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@app.get("/querydata")
-async def querydata(request: Request):
+        response = create_error_response(500, "Internal server error")
+        return json.dumps(response, indent=4)
+# Perform data querying
+# Endpoint equivalent for /querydata
+async def querydata(request_json):
     try:
-        data = await request.json()
+        data = request_json['request_args']
         if data['request_query'] == "=(^)quack":
             # Create a sample dataframe with random values
             num_rows = data['request_render']  # For example, 7 days in a week
@@ -58,6 +87,9 @@ async def querydata(request: Request):
 
             query_result = create_json_responses(df, data['request_contents'])
         else:
+            # Refresh connection with Postgres, only if postgres is mentioned
+            if "postgres" in data['request_query']:
+                refresh_postgres()
             query_result = await process_duck_query(conn,data['request_query'], data['request_contents'], data['request_render'])
         
         # Once query is successful add the record to our table log
@@ -66,7 +98,9 @@ async def querydata(request: Request):
         return json.dumps(query_result, indent=4)
     
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        response = create_error_response(500, "Internal server error")
+        return json.dumps(response, indent=4)
+
 
 async def process_duck_query(conn, sql_query, request_contents, render_size):
     # Extract all user specified DeltaTables
@@ -83,7 +117,8 @@ async def process_duck_query(conn, sql_query, request_contents, render_size):
     new_sql_query = sql_query
     for delta_table in delta_tables:
         # First connect to the DeltaTable in the data path
-        dt = DeltaTable(delta_path + delta_table)
+        if os.path.exists(delta_path + delta_table):
+            dt = DeltaTable(delta_path + delta_table)
         # Create a pyarrow dataset from the DeltaTable
         pyarrow_dataset = dt.to_pyarrow_dataset()
         # Convert the pyarrow dataset to a DuckDB dataset to make it queryable
@@ -109,3 +144,57 @@ async def streamer_step(to_stream, render_size):
             break
     pandas_chunk = chunk.slice(length = render_size + 1).to_pandas()
     return num_rows, num_columns , pandas_chunk
+
+# Set up endpoint dictionary
+endpoints = {
+    "checktable": checktable,
+    "duckconnect": duckconnect,
+    "querydata": querydata,
+}
+
+
+# RPC Code
+async def on_message(message: aiormq.abc.DeliveredMessage):
+    print("RECEVIED MESSAGE")
+    request_json = json.loads(message.body.decode())
+    
+    # Perform API Style routing to "endpoints":
+    raw_response = await endpoints[request_json["request_endpoint"]](request_json)
+        
+    response = raw_response.encode()
+
+    await message.channel.basic_publish(
+        response,
+        routing_key=message.header.properties.reply_to,
+        properties=aiormq.spec.Basic.Properties(
+            content_type='application/json',
+            correlation_id=message.header.properties.correlation_id,
+        ),
+    )
+
+    await message.channel.basic_ack(message.delivery.delivery_tag)
+    print('Request complete')
+
+
+async def main():
+    # Perform connection
+    connection = await aiormq.connect("amqp://guest:guest@rabbitmq/")
+
+    # Creating a channel
+    channel = await connection.channel()
+    await channel.basic_qos(prefetch_count=1)
+
+    # Declaring queue
+    declare_ok = await channel.queue_declare('duck_rpc')
+
+    # Start listening to the queue
+    await channel.basic_consume(declare_ok.queue, on_message)
+
+
+loop = asyncio.get_event_loop()
+loop.create_task(main())
+
+# we enter a never-ending loop that waits for data
+# and runs callbacks whenever necessary.
+print(" [x] Awaiting RPC requests")
+loop.run_forever()

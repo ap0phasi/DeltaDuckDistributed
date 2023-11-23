@@ -5,7 +5,11 @@
       <v-card class="mb-5">
         <v-row class="fill-height">
           <v-col cols="3" md="3" class="pl-5 pt-5 align-center justify-center">
-            <v-text-field label="CSV Folder Path" v-model="folderPath"></v-text-field>
+            <v-textarea 
+                label="CSV Folder Path or DuckDB Query" 
+                v-model="folderPath"
+                rows="1"
+            ></v-textarea>
           </v-col>
           <v-col cols="3" md="3" class="pt-5 align-center justify-center">
             <v-select
@@ -94,8 +98,8 @@ export default {
         // Query the __deltalake_dir table
         this.WS.send(JSON.stringify({ request_to: 'duck', request_endpoint: 'querydata', request_args: { 
             request_contents: ["Table"],
-            request_query :  "SELECT * FROM __deltalake_dir",
-            request_render : 1_000_000
+            request_query :  "SELECT * FROM postgres.__deltalake_dir",
+            request_render : 100
           } }));
       }
     },
