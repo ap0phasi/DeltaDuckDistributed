@@ -142,7 +142,7 @@ async def streamer_step(to_stream, render_size):
             num_rows += len(chunk)  # Increment the row count for each chunk
         except StopIteration:
             break
-    pandas_chunk = chunk.slice(length = render_size + 1).to_pandas()
+    pandas_chunk = chunk.slice(length = render_size + 1).to_pandas().astype(str)
     return num_rows, num_columns , pandas_chunk
 
 # Set up endpoint dictionary

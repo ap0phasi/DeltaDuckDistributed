@@ -55,13 +55,13 @@ async def ingestdata(request_json):
             # Use DuckDB to query from all csv files in specified directory
             dirpath = os.path.join(f'data/raw/{data["request_folderpath"]}/', "*.csv")
             # DeltaTables need Pandas DataFrames that are all in string
-            duck_query = f"SELECT * FROM read_csv_auto('{dirpath}', all_varchar = true)"
-        combined_df = conn.execute(duck_query).fetchdf()
+            duck_query = f"SELECT * FROM read_csv_auto('{dirpath}')"
+        combined_df = conn.execute(duck_query).fetch_arrow_table()
 
         # Asynchronously write to DeltaLake storage
         loop = asyncio.get_event_loop()
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            await loop.run_in_executor(executor, lambda: write_deltalake(f'data/deltalake/{data["request_tablename"]}', combined_df, mode=data["request_method"]))
+            await loop.run_in_executor(executor, lambda: write_deltalake(f'data/deltalake/{data["request_tablename"]}', combined_df, large_dtypes=True, mode=data["request_method"]))
 
         # If input was a query then we want to update our tracker accordingly
         if input_is_query:
