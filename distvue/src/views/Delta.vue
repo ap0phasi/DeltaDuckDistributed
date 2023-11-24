@@ -84,23 +84,28 @@ export default {
         })
       },
       processData() {
-        this.messageoutput = "Processing Request..."
+        this.messageoutput = "Sending Request..."
+        // Submit Request to Ingest Data
         this.WS.send(JSON.stringify({ request_to: 'delta', request_endpoint: 'ingestdata', request_args: { 
           request_tablename : this.tableName,
           request_folderpath : this.folderPath,
           request_method : this.selectedOptions
         } }));
+        this.messageoutput = "Processing Request..."
+        // After ingestion is complete check __deltalake_dir table
         this.checkTables()
       },
       checkTables(){
+        this.messageoutput = "Checking Directories"
         // Check the status of DeltaTables through a request
         this.WS.send(JSON.stringify({ request_to: 'duck', request_endpoint: 'checktable', request_args: {}}))
         // Query the __deltalake_dir table
         this.WS.send(JSON.stringify({ request_to: 'duck', request_endpoint: 'querydata', request_args: { 
             request_contents: ["Table"],
-            request_query :  "SELECT * FROM postgres.__deltalake_dir",
+            request_query :  "SELECT TableName, Parent, Query FROM postgres.__deltalake_dir",
             request_render : 100
           } }));
+        this.messageoutput = "Processing Request..."
       }
     },
     created() {

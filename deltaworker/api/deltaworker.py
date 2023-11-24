@@ -64,12 +64,10 @@ async def ingestdata(request: Request):
                         itemname = "=" + itemname
 
                     # Insert into tracking table
-                    keysearch = conn.execute("SELECT MAX(t_id) FROM postgres.__deltalake_dir").fetchdf().iloc[0,0]
-                    keyval = 0 if keysearch != keysearch else keysearch + 1 
                     conn.execute("""
-                            INSERT INTO postgres.__deltalake_dir (t_id, TableName, Parent, Query)
-                            VALUES (?, ?, ?, ?)
-                        """, (str(keyval), "=(^)" + data["request_tablename"], itemname, data['request_folderpath']))
+                            INSERT INTO postgres.__deltalake_dir (TableName, Parent, Query)
+                            VALUES (?, ?, ?)
+                        """, ("=(^)" + data["request_tablename"], itemname, data['request_folderpath']))
                     
         json_response = {
             "respond_to": "delta",

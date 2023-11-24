@@ -32,10 +32,8 @@ def log_tables(path, connection):
 
     # Add new entries from the directory
     for entry in entries_to_add:
-        keysearch = cursor.execute("SELECT MAX(t_id) FROM postgres.__deltalake_dir").fetchdf().iloc[0,0]
-        keyval = 0 if keysearch != keysearch else keysearch + 1 
-        cursor.execute("INSERT INTO postgres.__deltalake_dir (t_id, TableName, Parent, Query) VALUES (?, ?, ?, ?)", 
-                       (str(keyval), entry, None, None))
+        cursor.execute("INSERT INTO postgres.__deltalake_dir (TableName, Parent, Query) VALUES (?, ?, ?)", 
+                       (entry, None, None))
 
     connection.commit()
     
@@ -79,12 +77,10 @@ def extract_tables(sql,connection):
 def write_table_log(query,new_table,source_tables,connection):
     cursor = connection.cursor()
     for source_table in source_tables:
-        keysearch = cursor.execute("SELECT MAX(t_id) FROM postgres.__deltalake_dir").fetchdf().iloc[0,0]
-        keyval = 0 if keysearch != keysearch else keysearch + 1 
         cursor.execute("""
-            INSERT INTO postgres.__deltalake_dir (t_id, TableName, Parent, Query)
-            VALUES (?, ?, ?, ?)
-        """, (str(keyval), new_table, source_table, query))
+            INSERT INTO postgres.__deltalake_dir (TableName, Parent, Query)
+            VALUES (?, ?, ?)
+        """, (new_table, source_table, query))
     
 
 if __name__=="__main__":
