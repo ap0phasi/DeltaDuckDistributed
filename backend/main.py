@@ -10,6 +10,8 @@ import os
 import numpy as np
 import pandas as pd
 
+from parse_queries import parse_and_create_packets
+
 app = FastAPI()
 
 #RPC Client
@@ -91,34 +93,56 @@ message_routes = {
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    # Instantiate the RPC client once and connect it.
     backend_rpc = BackendRpcClient()
     await backend_rpc.connect()
-    # Ensure that backend_rpc is properly instantiated.
+
     while True:
-        # Receive message
         message_text = await websocket.receive_text()
-        # Extract JSON
         message_json = json.loads(message_text)
-        
+
         try:
             if message_routes[message_json.get('request_to')] == "rpc":
-                # Call RPC and await response
-                response_message = await backend_rpc.call(message_text)
-                await websocket.send_text(response_message)
-                
+                # Check if request_args contains 'request_query' and that 'request_query' contains '-- id:'
+                request_args = message_json.get('request_args', {})
+                request_query = request_args.get('request_query', '')
+                if request_query and '-- id: ' in request_query:
+                    query_text = message_json['request_args']['request_query']
+                    packets = parse_and_create_packets(query_text)
+                    print(packets)
+
+                    # Process each packet
+                    for packet in packets:
+                        # Create asyncio tasks for each query in the packet
+                        tasks = [asyncio.create_task(
+                            backend_rpc.call(json.dumps({
+                                **message_json,  # Copy the original message_json
+                                "request_args": {
+                                    **message_json['request_args'],  # Copy the original request_args
+                                    "request_query": query  # Update the request_query
+                                }
+                            }))
+                        ) for query in packet]
+
+                        # Wait for all tasks in the packet to complete
+                        responses = await asyncio.gather(*tasks)
+                        for response in responses:
+                            await websocket.send_text(response)
+
+                else:
+                    # Process as a single request if no 'request_query' field or if no decorator
+                    response_message = await backend_rpc.call(message_text)
+                    await websocket.send_text(response_message)
+                    
             elif message_routes[message_json.get('request_to')] == "api":
                 message_requestto = message_json.get('request_to')
                 message_requestendpoint = message_json.get('request_endpoint')
-
                 # Attempt to send the request and get a response
                 json_response = await send_request(
                     url_routes[message_requestto] + message_requestendpoint,
                     json=message_json.get('request_args')
                 )
-
                 # Send the JSON response data
                 await websocket.send_text(json_response)
+
         except Exception as e:
-            # Handle any other exceptions that may occur
             await websocket.send_text(json.dumps({'error': 'An unexpected error occurred: ' + str(e)}))

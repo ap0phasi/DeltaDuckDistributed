@@ -131,6 +131,28 @@ With the persistence of temporary data using Postgres, there is the added benefi
 SELECT * FROM postgres.temptable
 ```
 
+## DuckDB Parallelization within a Single WebSocket Connection
+
+The use of distributed Duck and Delta workers is primarily focused around maintaining responsiveness for multiple connections to the websocket. However, this distribution can be leveraged for parallelization of requests on a single websocket connection. This project utilizes a custom query pipeline format where queries can be allocated to different Duck workers and executed in parallel based on their dependence on one another. As an example, a query pipeline can take the following form:
+
+```
+-- id: 1
+CREATE TABLE postgres.temp1 AS SELECT * FROM =(^)climate;
+
+-- id: 2
+CREATE TABLE postgres.temp2 AS SELECT * FROM =(^)climate;
+
+-- id: 3
+-- depends_on: 1,2
+SELECT * FROM postgres.temp1
+UNION ALL
+SELECT * FROM postgres.temp2;
+```
+
+Where ```depends_on``` refers to the ```id``` provided in each query decorator. If no ```depends_on``` is provided, it is assumed there is no dependence. The websocket constructs a dependency graph based on these decorators to create query packets. In this case, as queries 1 and 2 are not dependent on any other queries, they are bundled together into a single packet, where each query in the packet is sent to different DuckDB workers to be executed in parallel. Query 3, being dependent on 1 and 2, is only executed after the parallel execution of 1 and 2 finishes. 
+
+This offers flexibility and structure to the default behavior of websockets, where within a connection, subsequent requests are not submitted to the message queue until previous responses are received. By explicitly stating what operations can happen in parallel versus sequentially, users can maximize the utilization of DuckDB workers. 
+
 ## MotherDuck Functionality
 
 As this application also works for MotherDuck connections, MotherDuck can be used for data persistence instead of a local Postgres. 
