@@ -1,4 +1,4 @@
-# Distributed DeltaLake+DuckDB Dashboard
+# SordDB: A Distributed DeltaLake+DuckDB Dashboard
 
 A lightweight, distributed platform for data analysis demonstrating integration of Vue 3 with Vite and Vuetify for the frontend, a robust Python WebSocket backend, and advanced data handling using DeltaTables and DuckDB. This project aims to provide seamless real-time data querying with distributed DeltaLake and DuckDB workers, all separately containerized with Docker for scalability and responsiveness. 
 
@@ -42,7 +42,7 @@ SELECT * FROM =(^)myclimate
 ```
 The **=(^)** decorator used before a table name tells the DuckDB worker to query from a DeltaTable of that name. 
 
-Users can select if they want the query response to be a *Message*, *Chart*, or *Table*. Instead of rendering the entire query result in a chart or table, users can specify with the slider how many data points they want rendered. This does impact the querying itself; the entire query is performed by the worker container in a zero-copy streaming fashion, with just the user-specified slice converted into the JSONs required for rendering charts and tables. 
+Users can select if they want the query response to be a *Message*, *Chart*, or *Table*. Instead of rendering the entire query result in a chart or table, users can specify with the slider how many data points they want rendered. This does not impact the querying itself; the entire query is performed by the worker container in a zero-copy streaming fashion, with just the user-specified slice converted into the JSONs required for rendering charts and tables. 
 
 ![DuckDB Query](https://github.com/ap0phasi/DeltaDuckDistributed/blob/main/media/DuckDB_Query.png)
 
@@ -149,7 +149,7 @@ UNION ALL
 SELECT * FROM postgres.temp2;
 ```
 
-Where ```depends_on``` refers to the ```id``` provided in each query decorator. If no ```depends_on``` is provided, it is assumed there is no dependence. The websocket constructs a dependency graph based on these decorators to create query packets. In this case, as queries 1 and 2 are not dependent on any other queries, they are bundled together into a single packet, where each query in the packet is sent to different DuckDB workers to be executed in parallel. Query 3, being dependent on 1 and 2, is only executed after the parallel execution of 1 and 2 finishes. 
+Where ```depends_on``` refers to the ```id``` provided in each query decorator. If no ```depends_on``` is provided, it is assumed there is no dependence. The websocket backend constructs a dependency graph based on these decorators to create query packets. In this case, as queries 1 and 2 are not dependent on any other queries, they are bundled together into a single packet, where each query in the packet is sent to different DuckDB workers to be executed in parallel. Query 3, being dependent on 1 and 2, is only executed after the parallel execution of 1 and 2 finishes. 
 
 This offers flexibility and structure to the default behavior of websockets, where within a connection, subsequent requests are not submitted to the message queue until previous responses are received. By explicitly stating what operations can happen in parallel versus sequentially, users can maximize the utilization of DuckDB workers. 
 
