@@ -51,7 +51,7 @@ class BackendRpcClient:
         await self.channel.basic_publish(
             request_json.encode(),
             # Different workers are looking at different queues, we write to the appropiate queue here
-            routing_key=json.loads(request_json).get('request_to')+'_rpc',
+            routing_key=json.loads(request_json).get('request_to')+'_rpc', # If there was a node specified, 'request_to' would include it
             properties=aiormq.spec.Basic.Properties(
                 content_type='application/json',
                 correlation_id=correlation_id,
@@ -107,22 +107,25 @@ async def websocket_endpoint(websocket: WebSocket):
                 request_query = request_args.get('request_query', '')
                 if request_query and '-- id: ' in request_query:
                     query_text = message_json['request_args']['request_query']
-                    packets = parse_and_create_packets(query_text)
-                    print(packets)
+                    packets, nodes = parse_and_create_packets(query_text)\
+                        
+                    for packet, node in zip(packets, nodes):
+                        tasks = []
+                        for query, query_node in zip(packet, node):
+                            # Create a copy of the message_json for each query
+                            message_to_send = message_json.copy()  
+                            message_to_send['request_args'] = message_to_send.get('request_args', {}).copy()
 
-                    # Process each packet
-                    for packet in packets:
-                        # Create asyncio tasks for each query in the packet
-                        tasks = [asyncio.create_task(
-                            backend_rpc.call(json.dumps({
-                                **message_json,  # Copy the original message_json
-                                "request_args": {
-                                    **message_json['request_args'],  # Copy the original request_args
-                                    "request_query": query  # Update the request_query
-                                }
-                            }))
-                        ) for query in packet]
+                            # Update 'request_to' with node information if available
+                            if query_node:
+                                message_to_send['request_to'] = message_to_send['request_to'] + query_node
 
+                            # Update the 'request_query'
+                            message_to_send['request_args']['request_query'] = query
+
+                            # Create an asyncio task for the query
+                            tasks.append(asyncio.create_task(backend_rpc.call(json.dumps(message_to_send))))
+                        
                         # Wait for all tasks in the packet to complete
                         responses = await asyncio.gather(*tasks)
                         for response in responses:
