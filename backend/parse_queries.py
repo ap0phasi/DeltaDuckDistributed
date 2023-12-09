@@ -112,7 +112,7 @@ if __name__ == "__main__":
         
     query_text = """
     -- id: 1
-    -- node: 3c0b4fad7694
+    -- node: e6e1903a5e9f
     CREATE TABLE eph2 AS SELECT * FROM eph1;
 
     -- id: 2
@@ -120,7 +120,7 @@ if __name__ == "__main__":
 
     -- id: 3
     -- depends_on: 1,2
-    -- node: 3c0b4fad7694
+    -- node: e6e1903a5e9f
     CREATE TABLE eph3 AS
     SELECT * FROM eph2
     UNION ALL

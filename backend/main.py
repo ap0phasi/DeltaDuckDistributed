@@ -109,27 +109,23 @@ async def websocket_endpoint(websocket: WebSocket):
                     query_text = message_json['request_args']['request_query']
                     packets, nodes = parse_and_create_packets(query_text)\
                         
-                    # Process each packet along with its corresponding node
                     for packet, node in zip(packets, nodes):
-                        # Create asyncio tasks for each query in the packet
                         tasks = []
                         for query, query_node in zip(packet, node):
-                            
-                            # Prepare the message with node information if available
+                            # Create a copy of the message_json for each query
+                            message_to_send = message_json.copy()  
+                            message_to_send['request_args'] = message_to_send.get('request_args', {}).copy()
+
+                            # Update 'request_to' with node information if available
                             if query_node:
-                                message_json['request_to'] = message_json['request_to'] + query_node  # Add node information to message if specified
-                                
-                            message_to_send = {
-                                **message_json,  # Copy the original message_json
-                                "request_args": {
-                                    **message_json['request_args'],  # Copy the original request_args
-                                    "request_query": query  # Update the request_query
-                                }
-                            }
+                                message_to_send['request_to'] = message_to_send['request_to'] + query_node
+
+                            # Update the 'request_query'
+                            message_to_send['request_args']['request_query'] = query
 
                             # Create an asyncio task for the query
                             tasks.append(asyncio.create_task(backend_rpc.call(json.dumps(message_to_send))))
-                            
+                        
                         # Wait for all tasks in the packet to complete
                         responses = await asyncio.gather(*tasks)
                         for response in responses:

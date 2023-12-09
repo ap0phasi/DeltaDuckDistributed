@@ -1,6 +1,12 @@
-# SordDB: A Distributed DeltaLake+DuckDB Dashboard
+# Sord: a Pocket-Sized Data Fabric using distributed DuckDB workers
 
-A lightweight, distributed platform for data analysis demonstrating integration of Vue 3 with Vite and Vuetify for the frontend, a robust Python WebSocket backend, and advanced data handling using DeltaTables and DuckDB. This project aims to provide seamless real-time data querying with distributed DeltaLake and DuckDB workers, all separately containerized with Docker for scalability and responsiveness. 
+> **sord**  
+> */sɔːd/*  
+> _noun_
+> 1. A flock of mallard ducks.
+
+
+A lightweight, distributed platform for data analysis demonstrating integration of Vue 3 with Vite and Vuetify for the frontend, a robust Python WebSocket backend, and advanced data handling using DeltaTables, Postgres, and DuckDB. This project aims to provide seamless real-time data querying with distributed DeltaLake and DuckDB workers, all separately containerized with Docker for scalability and responsiveness. 
 
 ## Overview
 
@@ -152,6 +158,81 @@ SELECT * FROM postgres.temp2;
 Where ```depends_on``` refers to the ```id``` provided in each query decorator. If no ```depends_on``` is provided, it is assumed there is no dependence. The websocket backend constructs a dependency graph based on these decorators to create query packets. In this case, as queries 1 and 2 are not dependent on any other queries, they are bundled together into a single packet, where each query in the packet is sent to different DuckDB workers to be executed in parallel. Query 3, being dependent on 1 and 2, is only executed after the parallel execution of 1 and 2 finishes. 
 
 This offers flexibility and structure to the default behavior of websockets, where within a connection, subsequent requests are not submitted to the message queue until previous responses are received. By explicitly stating what operations can happen in parallel versus sequentially, users can maximize the utilization of DuckDB workers. 
+
+## Node Specification for In-Memory Utilization
+
+The functionality showcased above allows for multiple DuckDB workers to share data across a number of persistent data sources. However, there are scenarios where we want to save temporary data but do not need it accessible to other DuckDB workers. Doing so allows us to utilize the DuckDB's significantly higher speed when accessing data stored in RAM. As DuckDB workers default to in-memory, we can simply save a table like this:
+
+```
+CREATE TABLE eph1 AS SELECT * FROM =(^)climate
+```
+
+However, if we have multiple DuckDB workers running, when we submit this request it will be added to our RabbitMQ and an available worker will pick up the request. Subsequent requests are not guarenteed to be picked up by the same worker, so queries like:
+
+```
+SELECT * FROM eph1
+```
+
+Are expected to fail in most cases save for the lucky scenario where the same Duck worker that picked up the original request to create the table picks up this subsequent query. To avoid this inconvenience, functionality has been added for DuckDB worker listing, table tracking, and worker specification. 
+
+### DuckDB Worker Tracking
+
+Rendering this query as a table
+
+```
+SELECT * FROM postgres.__worker_list
+```
+
+Will show the worker ids of all DuckDB workers. 
+
+### Table Tracking
+
+Table tracking now includes the location of the data on the DeltaLake Management page. If the data is in the persistent shared postgres it will be labeled as such, data in the DeltaLake will be not have a Location value, and data stored in-memory on the workers will be labeled with the respective worker id. 
+
+### Worker Specification
+
+Users can now specify what worker they want an operation to be performed by using the following convention:
+
+```
+-- id: 1
+-- node: <worker_id>
+<query>;
+```
+Don't forget the semi-colon! To follow along with the previous example, if our DeltaLake Management page indicates ```eph``` is stored on *cb391c323181*, we can run this query: 
+
+```
+-- id: 1
+-- node: cb391c323181
+SELECT * FROM eph1;
+```
+We will find this query is always successful, because performing the above specification routes the RPC request to a dedicated message queue just for the specified worker instead of the general queue to be picked up by any available worker. 
+
+The ability to specify nodes within the RabbitMQ + RPC coordination system allows users to temporarily store highly accessible data on a single node for extremely fast DuckDB operations, but the real power can be demonstrated in operations like this:
+
+```
+-- id: 1
+-- node: cb391c323181
+CREATE TABLE eph2 AS SELECT * FROM eph1;
+
+-- id: 2
+CREATE TABLE postgres.para1 AS SELECT * FROM =(^)climate;
+
+-- id: 3
+-- depends_on: 1,2
+-- node: cb391c323181
+CREATE TABLE eph3 AS
+SELECT * FROM eph2
+UNION ALL
+SELECT * FROM postgres.para1;
+```
+
+Here, based on the dependency graph, query 1 and 2 will run simultaneously, where query 1 saves *eph2* in-memory and query 2 writes a table to the shared Postgres storage. Query 3 depends on both of these tables to save a unioned table in-memory, so it waits until the simultaneous executions of queries 1 and 2 finish before running. And of course, whenever you want to persist data off of RAM, you can always run:
+
+```
+-- id: 1
+-- node: cb391c323181
+CREATE TABLE postgres.eph1 AS SELECT * FROM eph1;
+```
 
 ## MotherDuck Functionality
 
