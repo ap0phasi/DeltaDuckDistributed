@@ -57,6 +57,12 @@ def extract_tables(sql,connection):
         
         # If a CREATE TABLE operation was previously found and the token is an Identifier
         if create_table_found and isinstance(item, Identifier):
+            # Since this is the table being created we will pull the location
+            if "postgres." not in item.value:
+                # If the new table isn't postgres we will assume it is local, so we will save the hostname
+                location = os.getenv("HOSTNAME")
+            else:
+                location = "postgres"
             new_table = item.get_real_name()
             create_table_populated = True
             create_table_found = False
@@ -71,16 +77,17 @@ def extract_tables(sql,connection):
             source_tables.append(itemname)
             create_table_populated = True
     if new_table is not None:
-        write_table_log(sql,new_table,source_tables,connection)
+        write_table_log(sql, new_table, source_tables, connection, location)
     return "Parsed"
 
-def write_table_log(query,new_table,source_tables,connection):
+def write_table_log(query, new_table, source_tables, connection, location):
     cursor = connection.cursor()
+    print(new_table)
     for source_table in source_tables:
         cursor.execute("""
-            INSERT INTO postgres.__deltalake_dir (TableName, Parent, Query)
-            VALUES (?, ?, ?)
-        """, (new_table, source_table, query))
+            INSERT INTO postgres.__deltalake_dir (TableName, Parent, Query, Loc)
+            VALUES (?, ?, ?, ?)
+        """, (new_table, source_table, query, location))
     
 
 if __name__=="__main__":

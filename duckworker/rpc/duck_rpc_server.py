@@ -30,6 +30,13 @@ def refresh_postgres():
 # Initial postgres connection
 connect_postgres()
 
+# Write hostname to postgres table
+worker_id = [os.getenv("HOSTNAME")]
+conn.execute("""
+            INSERT INTO postgres.__worker_list (worker_id)
+            VALUES (?)
+        """, (worker_id))
+
 # For error handling
 def create_error_response(code, message, error_type=None):
     response = {
@@ -176,6 +183,13 @@ async def on_message(message: aiormq.abc.DeliveredMessage):
     print('Request complete')
 
 
+async def setup_queue(channel, queue_name, callback):
+    # Declaring queue
+    await channel.queue_declare(queue_name)
+
+    # Start listening to the queue
+    await channel.basic_consume(queue_name, callback)
+    
 async def main():
     # Perform connection
     connection = await aiormq.connect("amqp://guest:guest@rabbitmq/")
@@ -184,11 +198,11 @@ async def main():
     channel = await connection.channel()
     await channel.basic_qos(prefetch_count=1)
 
-    # Declaring queue
-    declare_ok = await channel.queue_declare('duck_rpc')
-
-    # Start listening to the queue
-    await channel.basic_consume(declare_ok.queue, on_message)
+    # Setup general queue
+    await setup_queue(channel, 'duck_rpc', on_message)
+    
+    # Setup specific queue
+    await setup_queue(channel, f'duck{worker_id[0]}_rpc', on_message)
 
 
 loop = asyncio.get_event_loop()
